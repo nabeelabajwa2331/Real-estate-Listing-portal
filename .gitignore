@@ -3,3 +3,8 @@ dist/
 .env
 uploads/
 .DS_Store
+
+# npm is the package manager for this project
+pnpm-lock.yaml
+pnpm-workspace.yaml
+yarn.lock
