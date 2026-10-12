@@ -1,14 +1,14 @@
 // Pure helpers for avatars (kept separate so they are easy to unit test).
 
 export const AVATAR_PALETTE = [
-  '#1b2a4a',
-  '#2e4374',
-  '#3b5a8a',
-  '#6b4f1d',
-  '#8a6d12',
-  '#41573f',
-  '#5a3a4a',
-  '#2f4f4f',
+  '#0f6b4f',
+  '#0a4b37',
+  '#14805f',
+  '#2f5d4a',
+  '#5f7f6b',
+  '#7e9e8a',
+  '#4e6b5a',
+  '#8a6d4a',
 ];
 
 export const initialsOf = (name = '') =>

@@ -14,6 +14,22 @@ const RESET_MINUTES = 30;
 const VERIFY_HOURS = Number(process.env.VERIFY_EXPIRES_HOURS || 24);
 const verifyExpiry = () => new Date(Date.now() + VERIFY_HOURS * 60 * 60 * 1000);
 
+// When false (useful in development), registration creates a ready-to-use
+// account with no email step. Keep it true in production so real users must
+// confirm their email.
+const REQUIRE_EMAIL_VERIFICATION = process.env.REQUIRE_EMAIL_VERIFICATION !== 'false';
+
+// Specific addresses that never need email verification (e.g. test accounts),
+// even when verification is otherwise required.
+const bypassList = () =>
+  (process.env.VERIFICATION_BYPASS_EMAILS || '')
+    .split(',')
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+
+const bypassesVerification = (email) =>
+  !REQUIRE_EMAIL_VERIFICATION || bypassList().includes(String(email).toLowerCase());
+
 // The fields that are safe to send to the browser
 const publicUser = (u) => ({
   id: u._id,
@@ -43,6 +59,15 @@ export const register = async (req, res) => {
     return res.status(409).json({ message: 'An account with this email already exists' });
   }
 
+  const resolvedRole = role === 'agent' ? 'agent' : 'user'; // admin can never be chosen here
+
+  // Verification disabled (development) or this address is explicitly bypassed:
+  // create a usable account immediately, no email step.
+  if (bypassesVerification(email)) {
+    await User.create({ name, email, phone, password, role: resolvedRole, isVerified: true });
+    return res.status(201).json({ message: 'Account created. You can sign in now.' });
+  }
+
   const { raw, hashed } = createRandomToken();
   const passwordHash = await bcrypt.hash(password, 12);
 
@@ -55,7 +80,7 @@ export const register = async (req, res) => {
       email,
       phone,
       passwordHash,
-      role: role === 'agent' ? 'agent' : 'user', // admin can never be chosen here
+      role: resolvedRole,
       verifyToken: hashed,
       verifyTokenExpires: verifyExpiry(),
     },

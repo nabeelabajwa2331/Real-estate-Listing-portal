@@ -106,6 +106,14 @@ request a new one with "Resend verification email". Note that a successful
 password reset also marks the account verified, since opening the emailed reset
 link proves control of that inbox.
 
+**Verification is controlled by `REQUIRE_EMAIL_VERIFICATION`** (default `true`).
+When `true`, new accounts must confirm via email. When `false`, registration
+creates a ready-to-use account with **no email step** — handy in development so
+test/dummy addresses can sign in immediately. Keep it `true` in production so
+real users verify through their own inbox. `VERIFICATION_BYPASS_EMAILS`
+(comma-separated) lists specific addresses that skip verification even when it is
+required — useful for a few fixed test accounts while everyone else verifies.
+
 **No account is created until the email is confirmed.** A signup is stored as a
 `PendingUser` (with the password already hashed) and the real `User` is created
 only when the verification link is opened. Unconfirmed signups auto-expire after
