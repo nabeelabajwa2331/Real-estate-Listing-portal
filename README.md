@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Real Estate Listing Platform
 
 React + Node.js/Express + MongoDB. This version covers **milestone 1 (setup)**,
@@ -419,3 +420,7 @@ client/
   src/pages/admin/          AdminDashboard
   src/pages/dashboard/      DashboardLayout, Overview, Favorites, SavedSearches
 ```
+=======
+# Real-estate-Listing-portal
+Real-estate Listing portal
+>>>>>>> cdf8556fdce111ceb0bf27d2b4a5445a083ad448

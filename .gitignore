@@ -1,10 +1,60 @@
+# Dependencies
 node_modules/
-dist/
-.env
-uploads/
-.DS_Store
+.pnpm-store/
+jspm_packages/
+bower_components/
 
-# npm is the package manager for this project
-pnpm-lock.yaml
-pnpm-workspace.yaml
-yarn.lock
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+build/
+.next/
+out/
+.nuxt/
+.output/
+coverage/
+.nyc_output/
+
+# Uploaded files
+uploads/
+
+# Logs and diagnostic files
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Runtime files
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Package manager files
+# Keep pnpm lockfiles and workspace configuration tracked
+# pnpm-lock.yaml
+# pnpm-workspace.yaml
+
+# Tool caches
+.cache/
+.parcel-cache/
+.vite/
+.turbo/
+.pnpm-store/
+*.tsbuildinfo
+.eslintcache
+.stylelintcache
+.nyc_output/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode-test/
