@@ -1,0 +1,31 @@
+# Run the whole app in one container.
+#
+# Provide the values in a .env file next to this file (compose reads it
+# automatically), or export them in your shell. Example:
+#   MONGO_URI=... JWT_SECRET=... CLIENT_URL=http://localhost:5000 docker compose up --build
+services:
+  app:
+    build:
+      context: .
+      args:
+        VITE_MAPTILER_KEY: ${VITE_MAPTILER_KEY:-}
+        VITE_MAP_STYLE: ${VITE_MAP_STYLE:-streets-v2}
+    image: real-estate-app
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGO_URI: ${MONGO_URI}
+      JWT_SECRET: ${JWT_SECRET}
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:5000}
+      COOKIE_SAMESITE: ${COOKIE_SAMESITE:-lax}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+    restart: unless-stopped
