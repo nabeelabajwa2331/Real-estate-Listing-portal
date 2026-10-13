@@ -12,7 +12,8 @@
     "start": "node server.js",
     "test": "node --test",
     "create-admin": "node scripts/createAdmin.js",
-    "purge-unverified": "node scripts/purgeUnverified.js"
+    "purge-unverified": "node scripts/purgeUnverified.js",
+    "test-email": "node scripts/testEmail.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
