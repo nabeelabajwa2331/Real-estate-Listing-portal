@@ -11,6 +11,15 @@ if (!process.env.JWT_SECRET) {
   process.exit(1);
 }
 
+// Email is required when verification is on; warn loudly rather than let signups
+// silently fail in production.
+if (process.env.REQUIRE_EMAIL_VERIFICATION !== 'false' && !process.env.SMTP_HOST && process.env.NODE_ENV === 'production') {
+  console.warn(
+    'WARNING: email verification is required but SMTP_HOST is not set. ' +
+      'New users will not receive a verification email. Set SMTP_* (or set REQUIRE_EMAIL_VERIFICATION=false).'
+  );
+}
+
 await connectDB();
 
 // Socket.IO attaches to this http server for real-time inquiry delivery.

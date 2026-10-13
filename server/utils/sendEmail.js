@@ -34,10 +34,15 @@ async function getTestTransport() {
 export default async function sendEmail({ to, subject, text }) {
   const from = process.env.EMAIL_FROM || process.env.SMTP_USER || 'no-reply@example.com';
 
-  // 1. Real delivery.
+  // 1. Real delivery — goes to the recipient's own inbox.
   if (process.env.SMTP_HOST) {
     await getSmtpTransport().sendMail({ from, to, subject, text });
     return;
+  }
+
+  // Production must have SMTP; never silently fall back to printing.
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('SMTP is not configured; refusing to pretend an email was sent');
   }
 
   // 2. Development: capture in an Ethereal inbox and print a preview link.
@@ -56,7 +61,7 @@ export default async function sendEmail({ to, subject, text }) {
     }
   }
 
-  // 3. Last resort: print to the terminal.
+  // 3. Last resort (development only): print to the terminal.
   console.log('\n--- EMAIL (SMTP not configured, printed instead) ---');
   console.log(`To: ${to}\nSubject: ${subject}\n\n${text}`);
   console.log('----------------------------------------------------\n');
