@@ -226,11 +226,16 @@ export const forgotPassword = async (req, res) => {
     await user.save();
 
     const link = `${process.env.CLIENT_URL}/reset-password/${raw}`;
-    await sendEmail({
-      to: user.email,
-      subject: 'Reset your password',
-      text: `Hi ${user.name},\n\nOpen this link to choose a new password. It expires in ${RESET_MINUTES} minutes:\n${link}\n\nIf you did not ask for this, ignore this email.`,
-    });
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'Reset your password',
+        text: `Hi ${user.name},\n\nOpen this link to choose a new password. It expires in ${RESET_MINUTES} minutes:\n${link}\n\nIf you did not ask for this, ignore this email.`,
+      });
+    } catch (err) {
+      // Email may be unconfigured; keep the response generic rather than a 500.
+      console.error('Password reset email failed:', err.message);
+    }
   }
 
   res.json({ message: 'If that email is registered, a reset link has been sent.' });

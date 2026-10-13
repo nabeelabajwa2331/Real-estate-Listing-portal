@@ -35,7 +35,7 @@ export default function Register() {
   if (done) {
     return (
       <div className="card form">
-        <h1>Check your email</h1>
+        <h1>Account created</h1>
         <p className="alert alert-success">{done}</p>
         <Link to="/login" className="btn btn-primary">
           Go to sign in
