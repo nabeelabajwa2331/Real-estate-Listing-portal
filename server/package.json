@@ -13,6 +13,7 @@
     "test": "node --test",
     "create-admin": "node scripts/createAdmin.js",
     "purge-unverified": "node scripts/purgeUnverified.js",
+    "seed": "node scripts/seed.js",
     "test-email": "node scripts/testEmail.js"
   },
   "dependencies": {

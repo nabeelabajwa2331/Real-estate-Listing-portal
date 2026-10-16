@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import Listing from '../models/Listing.js';
 
 // GET /api/favorites/ids  — just the ids, for quick "is this saved?" checks
 export const getFavoriteIds = async (req, res) => {
@@ -21,6 +22,11 @@ export const getFavorites = async (req, res) => {
 // POST /api/favorites/:listingId
 export const addFavorite = async (req, res) => {
   const { listingId } = req.params;
+
+  // Don't let a stale or made-up id end up in the favorites list.
+  const exists = await Listing.exists({ _id: listingId });
+  if (!exists) return res.status(404).json({ message: 'Listing not found' });
+
   await User.findByIdAndUpdate(req.user._id, { $addToSet: { favorites: listingId } });
   res.status(201).json({ message: 'Saved to favorites' });
 };

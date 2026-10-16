@@ -46,10 +46,9 @@ export default function App() {
             <Route path="/inbox/:id" element={<Thread />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/chat/:id" element={<Chat />} />
-          </Route>
 
-          {/* Buyer / renter area */}
-          <Route element={<RoleRoute roles={['user']} />}>
+            {/* Favorites and saved searches are available to every signed-in
+                account, not only buyers, so agents and admins can use them too. */}
             <Route path="/dashboard" element={<DashboardLayout />}>
               <Route index element={<Overview />} />
               <Route path="favorites" element={<Favorites />} />

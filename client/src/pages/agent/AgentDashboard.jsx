@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom';
 import api, { errorMessage } from '../../api/axios.js';
 import { formatPrice, propertyLabel } from '../../components/ListingCard.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useInquiries } from '../../context/InquiryContext.jsx';
 
 const statusLabel = { pending: 'Pending', approved: 'Approved', rejected: 'Rejected' };
 
 export default function AgentDashboard() {
   const { user } = useAuth();
+  const { unread } = useInquiries();
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -53,9 +55,15 @@ export default function AgentDashboard() {
             Welcome, {user.name}. Manage the properties you have published.
           </p>
         </div>
-        <Link to="/agent/new" className="btn btn-primary">
-          + New listing
-        </Link>
+        <div className="head-actions">
+          <Link to="/inbox" className="btn">
+            Inquiries
+            {unread > 0 && <span className="nav-badge">{unread}</span>}
+          </Link>
+          <Link to="/agent/new" className="btn btn-primary">
+            + New listing
+          </Link>
+        </div>
       </header>
 
       {error && <p className="alert alert-error">{error}</p>}

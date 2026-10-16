@@ -3,6 +3,10 @@ import Avatar from '../../components/Avatar.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useFavorites } from '../../context/FavoritesContext.jsx';
 
+// The dashboard (favorites + saved searches) is open to every signed-in
+// account, so label the account by its real role rather than assuming buyer.
+const roleLabel = { admin: 'Administrator', agent: 'Agent', user: 'Buyer / renter' };
+
 export default function DashboardLayout() {
   const { user } = useAuth();
   const { count } = useFavorites();
@@ -14,7 +18,7 @@ export default function DashboardLayout() {
           <Avatar user={user} size={42} />
           <div>
             <p className="dash-user-name">{user.name}</p>
-            <p className="muted small">Buyer / renter</p>
+            <p className="muted small">{roleLabel[user.role] || 'Member'}</p>
           </div>
         </div>
 

@@ -1,39 +1,101 @@
-<<<<<<< HEAD
 # Real Estate Listing Platform
 
-React + Node.js/Express + MongoDB. This version covers **milestone 1 (setup)**,
-**milestone 2 (authentication)**, **milestone 3 (listings)**,
-**milestone 4 (admin approval and user management)**, **milestone 5 (search and
-map)**, **milestone 6 (favorites, saved searches and the user dashboard)**,
-**milestone 7 (inquiries, replies and email notifications)** and a separate
-real-time **chat** between users, from the design document.
+A full-stack property listing portal: React (Vite) front end, Node.js/Express API,
+MongoDB database, and real-time messaging over Socket.IO. It covers the whole
+design document — authentication, listings with admin approval, search + map,
+favorites and saved searches, inquiries with email notifications, and one-to-one
+chat.
 
-## What works now
+**Live demo:** https://real-estate-listing-portal-riay.onrender.com
 
-- Register as a user (buyer/renter) or an agent
-- Email verification, with a "resend" option (the account is created only once the email is confirmed)
-- Sign in and sign out (JWT in an httpOnly cookie)
+> The live demo runs on Render's free tier, so the first request after a period
+> of inactivity may take 30–60 seconds while the service wakes up.
+
+---
+
+## Technologies used
+
+**Front end**
+
+- React 18 with Vite
+- React Router (client-side routing, protected + role-based routes)
+- Axios (API client)
+- Leaflet + react-leaflet + react-leaflet-cluster (interactive map)
+- socket.io-client (real-time messaging)
+
+**Back end**
+
+- Node.js + Express 5 (ES modules)
+- MongoDB with Mongoose (schema, validation, indexes)
+- JWT authentication in an httpOnly cookie
+- bcryptjs (password hashing)
+- express-validator (per-route input validation)
+- express-rate-limit (per-IP rate limiting)
+- Multer + Cloudinary (image uploads, with a local-disk fallback)
+- Nodemailer (verification, password reset and notification emails)
+- Helmet (security headers / CSP)
+- Socket.IO (per-user rooms for live updates)
+
+**Tooling & infrastructure**
+
+- Vitest (client unit tests), Node's built-in `node:test` (server unit tests)
+- Docker (multi-stage build: client + API in one image)
+- GitHub Actions (CI: tests, client build, Docker build)
+- Render (Docker web service hosting)
+
+---
+
+## Features
+
+**Accounts & auth**
+
+- Register as a buyer/renter (`user`) or an `agent`
+- Email verification with a "resend" option, plus placeholder/disposable-domain
+  and DNS/MX checks
+- Sign in / sign out (JWT in an httpOnly cookie)
 - Forgot password and reset password by emailed link
-- View and edit profile, change password
-- Role-based access: `protect` and `authorize` on the server, `ProtectedRoute` and `RoleRoute` in React
-- Admin account created from the command line
+- View and edit profile, change password, optional avatar photo
+- Role-based access control on the server (`protect`, `authorize`) and in React
+  (`ProtectedRoute`, `RoleRoute`)
+
+**Listings**
+
 - Agents create, edit and delete listings with up to 10 photos each
 - Image uploads to Cloudinary (falls back to local disk storage when unset)
-- Public listing browse with filters, and a listing detail page with an image gallery
-- Agent dashboard listing every property the agent has published
-- Admin approval queue: approve or reject a listing with a reason
-- Admin user management: activate or deactivate accounts
-- New and edited listings start as `pending` and are hidden from the public until approved
-- Search with filters (city, price, type, size, bedrooms), sorting and pagination
-- Interactive Leaflet map with markers; results update as the map moves
-- Save and remove favorite listings (heart on cards and the detail page)
+- Public listing browse with filters, sorting and pagination
+- Listing detail page with an image gallery
+- New and edited listings start as `pending` and stay hidden from the public
+  until an admin approves them
+
+**Admin**
+
+- Listing approval queue: approve, or reject with a reason
+- User management: activate or deactivate accounts
+- Admins cannot change their own account status
+
+**Search & map**
+
+- Filter by city, price, type, size and bedrooms; sort and paginate
+- Interactive Leaflet map with clustered markers
+- Panning/zooming the map re-runs the search against the visible bounds
+- Address lookup ("Locate from address") proxied to Nominatim
+
+**Favorites & saved searches**
+
+- Save/remove favorite listings (heart on cards and the detail page)
 - Save the current search and re-run it later from the dashboard
-- Buyer/renter dashboard: overview, favorites and saved searches
+- Dashboard (overview, favorites, saved searches) — available to **every
+  signed-in account**, not just buyers
+
+**Inquiries & chat**
+
 - Signed-in users send inquiries from a listing; agents get an inbox
-- Real-time message delivery over Socket.IO, threaded and quoted replies
-- Initials avatars everywhere, with optional profile photos
-- Email notifications on new messages
-- A separate real-time chat between users: conversation list, message history and unread counts
+- Threaded replies with quoting
+- Real-time delivery over Socket.IO, with unread badges
+- Email notifications on new messages (dev fallback prints to the terminal)
+- A separate real-time one-to-one chat between any two users
+
+---
 
 ## Requirements
 
@@ -43,7 +105,9 @@ real-time **chat** between users, from the design document.
 > Use **npm** for this project (there is a `package-lock.json` in each package);
 > do not mix in pnpm/yarn, or `node_modules` gets duplicated and installs diverge.
 
-## Setup
+---
+
+## Getting started
 
 ### 1. Server
 
@@ -53,10 +117,11 @@ npm install
 cp .env.example .env      # Windows: copy .env.example .env
 ```
 
-Open `server/.env` and set:
+Open `server/.env` and set at least:
 
-- `MONGO_URI` to your MongoDB connection string
-- `JWT_SECRET` to a long random string
+- `MONGO_URI` — your MongoDB connection string
+- `JWT_SECRET` — a long random string
+  (`node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`)
 
 Then start it:
 
@@ -64,7 +129,7 @@ Then start it:
 npm run dev
 ```
 
-The API runs on http://localhost:5000. Check http://localhost:5000/api/health.
+The API runs on http://localhost:5000 — check http://localhost:5000/api/health.
 
 ### 2. Client
 
@@ -79,7 +144,7 @@ npm run dev
 
 Open http://localhost:5173.
 
-### 3. Admin account
+### 3. Create an admin account
 
 Set the `ADMIN_*` values in `server/.env`, then:
 
@@ -87,6 +152,53 @@ Set the `ADMIN_*` values in `server/.env`, then:
 cd server
 npm run create-admin
 ```
+
+### 4. (Optional) Seed demo data
+
+To explore the app with ready-made accounts and listings (including map
+coordinates), run:
+
+```bash
+cd server
+npm run seed
+```
+
+This creates:
+
+| Role  | Email               | Password     |
+| ----- | ------------------- | ------------ |
+| Admin | `admin@example.com` | `Admin12345` |
+| Agent | `agent@example.com` | `Agent12345` |
+| Buyer | `buyer@example.com` | `Buyer12345` |
+
+…plus 8 approved listings across several cities. The script is idempotent: it
+resets these demo accounts and replaces the demo agent's listings on each run.
+Change the credentials in `server/scripts/seed.js` before using it anywhere
+public.
+
+---
+
+## Environment variables
+
+Copy `server/.env.example` to `server/.env`. The most important values:
+
+| Variable | Purpose |
+| --- | --- |
+| `PORT` | API port (default `5000`) |
+| `NODE_ENV` | Set to `production` when deployed |
+| `MONGO_URI` | MongoDB connection string |
+| `JWT_SECRET` | Secret for signing auth tokens |
+| `CLIENT_URL` | Public URL of the app (CORS + links in emails) |
+| `COOKIE_SAMESITE` | `lax` for same-site, `none` for cross-site HTTPS |
+| `REQUIRE_EMAIL_VERIFICATION` | `true` in production, `false` to skip the email step |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `EMAIL_FROM` | Outgoing email |
+| `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | Image uploads |
+| `GEOCODE_USER_AGENT` | User-Agent sent to Nominatim (their policy requires one) |
+
+Optional client settings live in `client/.env` (`VITE_MAPTILER_KEY`,
+`VITE_MAP_STYLE`).
+
+---
 
 ## Emails (verification, reset, notifications)
 
@@ -102,37 +214,41 @@ Email behaviour depends on configuration:
   `EMAIL_TRANSPORT=console` to just print the message instead.
 
 Verification links expire after `VERIFY_EXPIRES_HOURS` (default 24); users can
-request a new one with "Resend verification email". Note that a successful
-password reset also marks the account verified, since opening the emailed reset
-link proves control of that inbox.
+request a new one with "Resend verification email". A successful password reset
+also marks the account verified, since opening the emailed reset link proves
+control of that inbox.
 
 **Verification is controlled by `REQUIRE_EMAIL_VERIFICATION`** (default `true`).
 When `true`, new accounts must confirm via email. When `false`, registration
 creates a ready-to-use account with **no email step** — handy in development so
-test/dummy addresses can sign in immediately. Keep it `true` in production so
-real users verify through their own inbox. `VERIFICATION_BYPASS_EMAILS`
+test/dummy addresses can sign in immediately. `VERIFICATION_BYPASS_EMAILS`
 (comma-separated) lists specific addresses that skip verification even when it is
-required — useful for a few fixed test accounts while everyone else verifies.
+required.
 
 **No account is created until the email is confirmed.** A signup is stored as a
 `PendingUser` (with the password already hashed) and the real `User` is created
 only when the verification link is opened. Unconfirmed signups auto-expire after
-24 hours, so addresses that never verify leave nothing behind — there are no
-dummy accounts. Registering with a placeholder/disposable domain (e.g.
-`example.com`, `test.com`, `mailinator.com`) is rejected up front, and
-registration also does a DNS check: a domain with no MX (or implicit A) record is
-rejected with "That email domain cannot receive mail". Lookups are cached and
-fail open on transient resolver errors (`MX_LOOKUP_TIMEOUT_MS`). To clear any
-legacy unverified accounts, run `npm run purge-unverified`. For your own testing,
-use an address you control — Gmail plus-aliases such as `you+test1@gmail.com`
-give you many test addresses in one inbox.
+24 hours. Registering with a placeholder/disposable domain (e.g. `example.com`,
+`test.com`, `mailinator.com`) is rejected up front, and registration also does a
+DNS check: a domain with no MX (or implicit A) record is rejected with "That
+email domain cannot receive mail". Lookups are cached and fail open on transient
+resolver errors (`MX_LOOKUP_TIMEOUT_MS`). To clear any legacy unverified
+accounts, run `npm run purge-unverified`.
 
 > MX checks confirm the *domain* can receive mail, not that a specific mailbox
 > exists. A fake mailbox at a real domain (e.g. `random123@gmail.com`) passes the
 > MX check, but still creates **no account** — only a pending signup that expires
 > in 24h.
 
-## API (milestone 2)
+> **Deploying a demo?** Email verification requires working SMTP, or nobody can
+> finish signup. For a public demo either configure `SMTP_*`, or set
+> `REQUIRE_EMAIL_VERIFICATION=false` (as the included `render.yaml` does).
+
+---
+
+## API reference
+
+### Auth (milestone 2)
 
 | Method | Path | Access | Purpose |
 | --- | --- | --- | --- |
@@ -145,19 +261,21 @@ give you many test addresses in one inbox.
 | POST | /api/auth/reset-password/:token | Public | Set a new password |
 | GET | /api/auth/me | Signed in | Current user |
 | PUT | /api/auth/me | Signed in | Update profile or password |
+| POST | /api/auth/me/avatar | Signed in | Upload/replace profile photo |
+| DELETE | /api/auth/me/avatar | Signed in | Remove profile photo |
 
-## API (milestone 3: listings)
+### Listings (milestone 3)
 
 | Method | Path | Access | Purpose |
 | --- | --- | --- | --- |
-| GET | /api/listings | Public | Browse listings (filters: city, listingType, propertyType, minPrice, maxPrice, minArea, maxArea, bedrooms, q, north/south/east/west, sort, page, limit) |
+| GET | /api/listings | Public | Browse (filters: city, listingType, propertyType, minPrice, maxPrice, minArea, maxArea, bedrooms, q, north/south/east/west, sort, page, limit) |
 | GET | /api/listings/:id | Public | Listing detail (increments the view count) |
 | GET | /api/listings/mine | Agent / admin | Listings owned by the signed-in agent |
 | POST | /api/listings | Agent / admin | Create a listing (`multipart/form-data`, up to 10 `images`) |
 | PUT | /api/listings/:id | Owner / admin | Update a listing (add `images`, delete with `removeImages`) |
 | DELETE | /api/listings/:id | Owner / admin | Delete a listing and its images |
 
-## API (milestone 4: admin)
+### Admin (milestone 4)
 
 | Method | Path | Access | Purpose |
 | --- | --- | --- | --- |
@@ -168,21 +286,17 @@ give you many test addresses in one inbox.
 | PATCH | /api/admin/users/:id/activate | Admin | Activate an account |
 | PATCH | /api/admin/users/:id/deactivate | Admin | Deactivate an account |
 
-Admins cannot change their own account status. Editing an existing listing returns
-it to the `pending` queue so it is reviewed again.
+Editing an existing listing returns it to the `pending` queue so it is reviewed
+again.
 
-## API (milestone 5: search, map and geocoding)
+### Search, map and geocoding (milestone 5)
 
 | Method | Path | Access | Purpose |
 | --- | --- | --- | --- |
-| GET | /api/listings | Public | Filters, sorting, pagination and map-bounds search (see above) |
 | GET | /api/stats | Public | Headline counts (listings, agents, cities) for the home page |
 | GET | /api/geocode?q= | Signed in | Turn an address into `{ lat, lng, label }` (proxies Nominatim) |
 
-`GEOCODE_USER_AGENT` in `.env` is sent to Nominatim, as their usage policy
-requires. Lookups are rate limited per minute (`GEOCODE_RATE_LIMIT`).
-
-## API (milestone 6: favorites and saved searches)
+### Favorites and saved searches (milestone 6)
 
 | Method | Path | Access | Purpose |
 | --- | --- | --- | --- |
@@ -196,9 +310,9 @@ requires. Lookups are rate limited per minute (`GEOCODE_RATE_LIMIT`).
 
 Saved-search `params` are whitelisted to the browse query keys, so a stored
 search always replays safely. The browse page reads its filters from the URL, so
-“Run search” simply navigates to `/listings?…`.
+"Run search" simply navigates to `/listings?…`.
 
-## API (milestone 7: inquiries)
+### Inquiries (milestone 7)
 
 | Method | Path | Access | Purpose |
 | --- | --- | --- | --- |
@@ -208,30 +322,7 @@ search always replays safely. The browse page reads its filters from the URL, so
 | POST | /api/inquiries | Signed in | Contact an agent about a listing |
 | POST | /api/inquiries/:id/reply | Participant | Reply (optional `quotedId`) |
 
-Sending an inquiry or replying emails the other party. With SMTP unconfigured,
-the message is printed in the server terminal instead (same dev fallback as the
-auth emails).
-
-### Real-time updates
-
-Messages are also pushed over Socket.IO. The client connects using the same
-httpOnly auth cookie (Vite proxies `/socket.io` in development), joins a room
-named after the user id, and listens for `inquiry:message`. When it fires, the
-open thread refetches and the unread badge updates — no polling.
-
-### Avatars
-
-Users show an initials avatar (colour derived from the name) unless they have a
-profile photo. Photos are optional:
-
-| Method | Path | Access | Purpose |
-| --- | --- | --- | --- |
-| POST | /api/auth/me/avatar | Signed in | Upload/replace profile photo (`multipart`, field `avatar`) |
-| DELETE | /api/auth/me/avatar | Signed in | Remove profile photo |
-
-## API (chat)
-
-Direct one-to-one chat between users, separate from listing inquiries.
+### Chat
 
 | Method | Path | Access | Purpose |
 | --- | --- | --- | --- |
@@ -242,16 +333,16 @@ Direct one-to-one chat between users, separate from listing inquiries.
 | GET | /api/chat/unread-count | Signed in | Conversations with unread + message total (badge) |
 | GET | /api/chat/users?q= | Signed in | Find people to start a chat with |
 
-New messages are pushed over the shared Socket.IO connection as `chat:message`.
-The client owns one socket (`SocketContext`); inquiries and chat subscribe to
-their own events on it.
+### Real-time updates
 
-## Image uploads
+Messages are pushed over Socket.IO. The client connects using the same httpOnly
+auth cookie (Vite proxies `/socket.io` in development), joins a room named after
+the user id, and listens for `inquiry:message` and `chat:message`. When one
+fires, the open thread/chat refetches and the unread badge updates — no polling.
+The client owns a single socket (`SocketContext`); the inquiry and chat contexts
+subscribe to their own events on it.
 
-Listing photos go to **Cloudinary** when `CLOUDINARY_CLOUD_NAME`,
-`CLOUDINARY_API_KEY` and `CLOUDINARY_API_SECRET` are set in `.env`. When they are
-left empty the server saves files under `server/uploads` and serves them from
-`/uploads`, so uploads work during development without an account.
+---
 
 ## Search and map
 
@@ -260,20 +351,33 @@ filters, sorting (newest, price, area) and pagination. Listings carry an optiona
 GeoJSON `location` (set by clicking the map in the listing form), which powers
 the Leaflet map. Panning or zooming the map re-runs the search against the
 visible bounds; this can be turned off with the "Search as I move the map"
-checkbox. Listings without coordinates still appear in the list but not on the map.
-
-Nearby markers are grouped into clusters that split apart as you zoom in.
+checkbox. Listings without coordinates still appear in the list but not on the
+map, and nearby markers are grouped into clusters that split apart as you zoom.
 
 ### Map tiles and geocoding
 
-Tiles default to OpenStreetMap, so the map works with no signup. To use
-MapTiler's styled basemaps (recommended for a production look), copy
-`client/.env.example` to `client/.env` and set `VITE_MAPTILER_KEY`; `VITE_MAP_STYLE`
-picks the MapTiler style (e.g. `streets-v2`, `basic-v2`, `streets-v2-dark`).
+Tiles default to OpenStreetMap, so the map works with no signup. For a production
+look, copy `client/.env.example` to `client/.env` and set `VITE_MAPTILER_KEY`
+(and optionally `VITE_MAP_STYLE`, e.g. `streets-v2`, `basic-v2`,
+`streets-v2-dark`). Note that OpenStreetMap's public tile servers block app
+traffic under their usage policy, so a real deployment should use MapTiler (or
+another provider).
 
 Agents can fill in the address and press **Locate from address** in the listing
 form. The client calls `/api/geocode`, which proxies Nominatim on the server and
 drops a pin at the result.
+
+---
+
+## Image uploads
+
+Listing photos (and avatars) go to **Cloudinary** when `CLOUDINARY_CLOUD_NAME`,
+`CLOUDINARY_API_KEY` and `CLOUDINARY_API_SECRET` are set. When they are left empty
+the server saves files under `server/uploads` and serves them from `/uploads`, so
+uploads work during development without an account. That folder is ephemeral in a
+container, so configure Cloudinary (or a persistent volume) for production.
+
+---
 
 ## Validation and rate limiting
 
@@ -284,11 +388,12 @@ drops a pin at the result.
   replay safely. Search input is regex-escaped before use.
 - Rate limits (per IP, configurable via env): a broad `API_RATE_LIMIT` on all of
   `/api`, plus stricter limits on auth (`AUTH_RATE_LIMIT`), geocoding
-  (`GEOCODE_RATE_LIMIT`) and messaging — inquiries and chat
-  (`MESSAGE_RATE_LIMIT`). `app.set('trust proxy', 1)` makes the limits correct
-  behind a reverse proxy.
+  (`GEOCODE_RATE_LIMIT`) and messaging (`MESSAGE_RATE_LIMIT`). `app.set('trust
+  proxy', 1)` makes the limits correct behind a reverse proxy.
 - Helmet sets security headers, including a CSP that allows the map tiles and
   Cloudinary images.
+
+---
 
 ## Testing
 
@@ -301,6 +406,8 @@ cd client && npm test     # vitest — search and avatar helpers
 
 The suites cover the pure logic that is easy to get wrong: regex escaping, saved
 search param cleaning, JWT/hash helpers, search summaries and avatar initials.
+
+---
 
 ## Deployment
 
@@ -324,10 +431,22 @@ Or with Compose (reads a `.env` next to `docker-compose.yml`):
 docker compose up --build
 ```
 
-Uploads fall back to the container's `server/uploads` when Cloudinary isn't set;
-that path is ephemeral, so configure Cloudinary for production.
+### Option B — Render (Docker web service)
 
-### Option B — plain Node
+Create a **Web Service**, point it at this repo, choose the **Docker** runtime
+with Dockerfile path `./Dockerfile` and leave the root directory blank, then add
+the environment variables from `server/.env.example`. A `render.yaml` blueprint is
+included as an alternative (New → Blueprint).
+
+Because Vite inlines `VITE_*` values at build time, Render passes service
+environment variables as Docker build arguments, so set `VITE_MAPTILER_KEY` /
+`VITE_MAP_STYLE` on the service for styled map tiles. Health check:
+`GET /api/health`.
+
+> Free-tier services spin down when idle, so the first request after inactivity
+> is slow. A paid plan (or any always-on host) avoids the cold start.
+
+### Option C — plain Node
 
 ```bash
 cd client && npm install && npm run build      # produces client/dist
@@ -338,19 +457,19 @@ NODE_ENV=production npm start                   # serves /api and the SPA on POR
 With `NODE_ENV=production` the server serves `client/dist` and falls back to
 `index.html` for client-side routes, so one process runs the whole app.
 
-### Environment checklist
+### Deployment environment checklist
 
 - `NODE_ENV=production`, a strong `JWT_SECRET`, `MONGO_URI` (Atlas) and
   `CLIENT_URL` (your public URL). Copy `server/.env.example` as a starting point.
-- **`SMTP_*` is required:** accounts are created only after email verification, so
-  without working email **no one can complete signup**.
+- **`SMTP_*` is required** for signup unless `REQUIRE_EMAIL_VERIFICATION=false`.
 - **Cloudinary** keys (or a persistent volume) — otherwise uploads are lost on
   redeploy.
 - The auth cookie is `secure` automatically in production, so the site must be
   served over **HTTPS**. Adjust `COOKIE_SAMESITE` (`none` for cross-site HTTPS).
-- Optional: set `VITE_MAPTILER_KEY` in `client/.env` before building for styled
-  map tiles; otherwise OpenStreetMap is used.
-- Create the admin: `npm run create-admin`. Health check: `GET /api/health`.
+- Optional: set `VITE_MAPTILER_KEY` at build time for styled map tiles;
+  otherwise OpenStreetMap is used.
+- Create the admin (`npm run create-admin`) and optionally seed demo data
+  (`npm run seed`). Health check: `GET /api/health`.
 
 ### CI
 
@@ -363,19 +482,14 @@ Deploy `client/dist` to any static host and point it at the API (set `CLIENT_URL
 on the server for CORS). Cross-site cookies require `COOKIE_SAMESITE=none` and
 HTTPS.
 
-## Protecting a route (for the next milestones)
-
-```js
-import { protect, authorize } from '../middleware/auth.js';
-
-router.post('/', protect, authorize('agent'), createListing);
-```
+---
 
 ## Project structure
 
 ```
 Dockerfile                  Builds the client + runs the API in one image
 docker-compose.yml          Runs the app with env from a root .env
+render.yaml                 Render blueprint (one Docker web service)
 .github/workflows/ci.yml    CI: server tests, client tests + build, docker build
 server/
   config/db.js              MongoDB connection
@@ -385,27 +499,15 @@ server/
   models/Inquiry.js         Buyer/agent conversation with replies
   models/Conversation.js    One-to-one chat between users
   models/PendingUser.js     Unverified signup (account created on verify)
-  controllers/authController.js
-  controllers/listingController.js
-  controllers/adminController.js
-  controllers/geocodeController.js
-  controllers/favoriteController.js
-  controllers/savedSearchController.js
-  controllers/inquiryController.js
-  controllers/chatController.js
-  routes/authRoutes.js      Routes and input validation
-  routes/listingRoutes.js
-  routes/adminRoutes.js
-  routes/geocodeRoutes.js
-  routes/favoriteRoutes.js
-  routes/savedSearchRoutes.js
-  routes/inquiryRoutes.js
-  routes/chatRoutes.js
+  controllers/              auth, listing, admin, geocode, favorite,
+                            savedSearch, inquiry, chat
+  routes/                   Route definitions + per-route validation
   middleware/               auth, validate, errorHandler, rateLimit
   utils/                    token, sendEmail, upload, query, email (address checks)
   uploads/                  Local image storage (development fallback)
   test/                     node:test unit tests (query, token, email)
-  scripts/createAdmin.js
+  scripts/createAdmin.js    Create/promote the admin account
+  scripts/seed.js           Seed demo accounts + listings
   scripts/purgeUnverified.js
   socket.js                 Socket.IO setup and per-user rooms
   app.js                    Express app
@@ -414,21 +516,15 @@ client/
   .env.example              Map tile settings (MapTiler key, style)
   src/api/axios.js          Axios instance
   src/config/map.js         Tile URL, attribution and default view
-  src/context/AuthContext.jsx
-  src/context/SocketContext.jsx
-  src/context/FavoritesContext.jsx
-  src/context/InquiryContext.jsx
-  src/context/ChatContext.jsx
+  src/context/              Auth, Socket, Favorites, Inquiry, Chat
   src/utils/                search.js, avatar.js (each with a *.test.js)
   src/routes/               ProtectedRoute, RoleRoute
-  src/components/           Navbar, ListingCard, ImageGallery, ListingMap, LocationPicker, Avatar
-  src/pages/                Home, Listings, ListingDetail, Inbox, Thread, Chat, Login,
-                            Register, VerifyEmail, ForgotPassword, ResetPassword, Profile
+  src/components/           Navbar, ListingCard, ImageGallery, ListingMap,
+                            LocationPicker, Avatar
+  src/pages/                Home, Listings, ListingDetail, Inbox, Thread, Chat,
+                            Login, Register, VerifyEmail, ForgotPassword,
+                            ResetPassword, Profile
   src/pages/agent/          AgentDashboard, ListingForm
   src/pages/admin/          AdminDashboard
   src/pages/dashboard/      DashboardLayout, Overview, Favorites, SavedSearches
 ```
-=======
-# Real-estate-Listing-portal
-Real-estate Listing portal
->>>>>>> cdf8556fdce111ceb0bf27d2b4a5445a083ad448

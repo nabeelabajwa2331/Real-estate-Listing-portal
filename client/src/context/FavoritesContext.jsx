@@ -29,6 +29,9 @@ export function FavoritesProvider({ children }) {
   // Optimistic toggle: update the UI first, revert if the request fails.
   const toggle = useCallback(
     async (id) => {
+      // Nothing to save when no one is signed in (the UI hides the control).
+      if (!user) return;
+
       const currentlySaved = ids.has(id);
       const apply = (add) =>
         setIds((prev) => {
@@ -46,7 +49,7 @@ export function FavoritesProvider({ children }) {
         apply(currentlySaved);
       }
     },
-    [ids]
+    [ids, user]
   );
 
   return (

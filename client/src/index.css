@@ -545,6 +545,18 @@ main.container {
 .page-head h1 {
   margin: 0 0 4px;
 }
+/* Grouped actions in a page header (e.g. the agent dashboard). */
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.head-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
 
 /* Tags, chips, status pills */
 .tag {

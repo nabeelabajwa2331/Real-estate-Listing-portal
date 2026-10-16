@@ -33,6 +33,7 @@ export default function Navbar() {
           {user ? (
             <>
               <NavLink to={homeForRole(user.role)}>{dashboardLabel[user.role]}</NavLink>
+              <NavLink to="/dashboard/favorites">Saved</NavLink>
               <NavLink to="/chat" className="nav-inbox">
                 Chat
                 {chatUnread > 0 && <span className="nav-badge">{chatUnread}</span>}
