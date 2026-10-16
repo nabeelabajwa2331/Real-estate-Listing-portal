@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { API_URL } from '../config/api.js';
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: `${API_URL}/api`,
   withCredentials: true, // send the login cookie with every request
 });
 

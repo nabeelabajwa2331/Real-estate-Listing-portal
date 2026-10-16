@@ -16,7 +16,6 @@ const router = Router();
 // Every route here is admin-only.
 router.use(protect, authorize('admin'));
 
-// Listing approval queue
 router.get('/listings', getListingsForReview);
 router.patch('/listings/:id/approve', approveListing);
 router.patch(
@@ -26,7 +25,6 @@ router.patch(
   rejectListing
 );
 
-// User management
 router.get('/users', getUsers);
 router.patch('/users/:id/activate', activateUser);
 router.patch('/users/:id/deactivate', deactivateUser);

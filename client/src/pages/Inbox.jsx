@@ -4,6 +4,7 @@ import api, { errorMessage } from '../api/axios.js';
 import Avatar from '../components/Avatar.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useInquiries } from '../context/InquiryContext.jsx';
+import { assetUrl } from '../config/api.js';
 
 const timeAgo = (value) => {
   if (!value) return '';
@@ -96,7 +97,7 @@ export default function Inbox() {
                 <Link to={`/inbox/${inquiry._id}`} className="thread-row card">
                   <div className="thread-thumb">
                     {inquiry.listing?.images?.[0]?.url ? (
-                      <img src={inquiry.listing.images[0].url} alt="" />
+                      <img src={assetUrl(inquiry.listing.images[0].url)} alt="" />
                     ) : (
                       <span className="muted small">No photo</span>
                     )}

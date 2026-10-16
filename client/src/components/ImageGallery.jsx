@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { assetUrl } from '../config/api.js';
 
 // Main photo plus a thumbnail strip, with prev/next controls. Renders a
 // graceful placeholder when a listing has no images yet.
@@ -15,7 +16,7 @@ export default function ImageGallery({ images = [], title = '' }) {
   return (
     <div className="gallery">
       <div className="gallery-main">
-        <img src={current.url} alt={`${title} — photo ${active + 1}`} />
+        <img src={assetUrl(current.url)} alt={`${title} — photo ${active + 1}`} />
 
         {images.length > 1 && (
           <>
@@ -42,7 +43,7 @@ export default function ImageGallery({ images = [], title = '' }) {
               onClick={() => setActive(i)}
               aria-label={`View photo ${i + 1}`}
             >
-              <img src={img.url} alt={`Thumbnail ${i + 1}`} />
+              <img src={assetUrl(img.url)} alt={`Thumbnail ${i + 1}`} />
             </button>
           ))}
         </div>

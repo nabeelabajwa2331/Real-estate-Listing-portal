@@ -404,8 +404,9 @@ cd server && npm test     # node:test — validation/query and token helpers
 cd client && npm test     # vitest — search and avatar helpers
 ```
 
-The suites cover the pure logic that is easy to get wrong: regex escaping, saved
-search param cleaning, JWT/hash helpers, search summaries and avatar initials.
+The suites cover the pure logic that is easy to get wrong: regex escaping and
+saved-search param cleaning, JWT/token hashing, email address/domain checks, and
+the client's search summaries and avatar initials.
 
 ---
 
@@ -446,7 +447,35 @@ environment variables as Docker build arguments, so set `VITE_MAPTILER_KEY` /
 > Free-tier services spin down when idle, so the first request after inactivity
 > is slow. A paid plan (or any always-on host) avoids the cold start.
 
-### Option C — plain Node
+### Option C — Vercel (front end) + a separate API host
+
+Vercel hosts static front ends and serverless functions; it **cannot** run this
+project's long-running Express + Socket.IO server or its MongoDB-backed API.
+The practical setup is: **API on Render, client on Vercel.**
+
+1. Deploy the API first (Option A or B) and note its public URL.
+2. On the API host set `CLIENT_URL` to the Vercel URL and `COOKIE_SAMESITE=none`
+   (cross-site cookies need `SameSite=None`; the cookie is already `Secure` in
+   production, and both sites must use HTTPS).
+3. On Vercel, import the repo and configure:
+   - **Root Directory:** `client`
+   - **Framework Preset:** Vite
+   - **Install Command:** `npm install`
+   - **Build Command:** `npm run build`
+   - **Output Directory:** `dist`
+   - **Environment variables:** `VITE_API_URL=https://your-api.onrender.com`
+     (plus `VITE_MAPTILER_KEY` / `VITE_MAP_STYLE` if you use styled tiles)
+4. Redeploy the API so the new CORS and cookie settings take effect.
+
+`VITE_API_URL` points the client at the API across origins (and loads uploaded
+images from it). When it is left empty the client uses the same origin, which is
+what the Docker/Render single-service deployment relies on. `client/vercel.json`
+adds the SPA fallback so client-side routes work on refresh.
+
+> Some browsers restrict third-party cookies. If sign-in misbehaves on Vercel,
+> host the client and API on the same site instead (Option A or B).
+
+### Option D — plain Node
 
 ```bash
 cd client && npm install && npm run build      # produces client/dist
@@ -513,7 +542,7 @@ server/
   app.js                    Express app
   server.js                 Entry point + http/socket server
 client/
-  .env.example              Map tile settings (MapTiler key, style)
+  .env.example              Map tile settings (MapTiler key, style) + API URL
   src/api/axios.js          Axios instance
   src/config/map.js         Tile URL, attribution and default view
   src/context/              Auth, Socket, Favorites, Inquiry, Chat

@@ -37,7 +37,6 @@ const rules = [
 
 const id = () => param('id').isMongoId().withMessage('Invalid listing');
 
-// Public browse
 router.get('/', getListings);
 
 // The signed-in agent's own listings. Must come before '/:id'.
@@ -46,7 +45,6 @@ router.get('/mine', protect, authorize('agent', 'admin'), getMyListings);
 // Public detail (owner/admin can also see pending or rejected listings)
 router.get('/:id', optionalProtect, [id()], validate, getListing);
 
-// Create / edit / delete
 router.post(
   '/',
   protect,

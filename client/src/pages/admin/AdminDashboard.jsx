@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api, { errorMessage } from '../../api/axios.js';
 import { formatPrice, propertyLabel } from '../../components/ListingCard.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { assetUrl } from '../../config/api.js';
 
 const statusTabs = [
   ['pending', 'Pending'],
@@ -123,7 +124,7 @@ function ApprovalQueue() {
             <article className="card review-card" key={listing._id}>
               <div className="review-media">
                 {listing.images?.[0]?.url ? (
-                  <img src={listing.images[0].url} alt="" />
+                  <img src={assetUrl(listing.images[0].url)} alt="" />
                 ) : (
                   <span className="muted small">No photo</span>
                 )}

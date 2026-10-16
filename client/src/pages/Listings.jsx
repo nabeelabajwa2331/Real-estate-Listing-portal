@@ -67,7 +67,7 @@ export default function Listings() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initial = useRef(readInitialState(searchParams)).current;
 
-  const [form, setForm] = useState(initial.filters); // inputs
+  const [form, setForm] = useState(initial.filters);
   const [filters, setFilters] = useState(initial.filters); // applied filters
   const [sort, setSort] = useState(initial.sort);
   const [page, setPage] = useState(initial.page);

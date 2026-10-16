@@ -29,7 +29,6 @@ export default function App() {
       <Navbar />
       <main className="container">
         <Routes>
-          {/* Public */}
           <Route path="/" element={<Home />} />
           <Route path="/listings" element={<Listings />} />
           <Route path="/listings/:id" element={<ListingDetail />} />
@@ -39,7 +38,6 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-          {/* Any signed-in account */}
           <Route element={<ProtectedRoute />}>
             <Route path="/profile" element={<Profile />} />
             <Route path="/inbox" element={<Inbox />} />
@@ -56,14 +54,12 @@ export default function App() {
             </Route>
           </Route>
 
-          {/* Agent area */}
           <Route element={<RoleRoute roles={['agent']} />}>
             <Route path="/agent" element={<AgentDashboard />} />
             <Route path="/agent/new" element={<ListingForm />} />
             <Route path="/agent/:id/edit" element={<ListingForm />} />
           </Route>
 
-          {/* Admin area */}
           <Route element={<RoleRoute roles={['admin']} />}>
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/*" element={<AdminDashboard />} />

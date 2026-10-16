@@ -14,7 +14,7 @@ export default function Thread() {
   const { refresh, tick } = useInquiries();
   const [inquiry, setInquiry] = useState(null);
   const [message, setMessage] = useState('');
-  const [quote, setQuote] = useState(null); // message being quoted
+  const [quote, setQuote] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);

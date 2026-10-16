@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFavorites } from '../context/FavoritesContext.jsx';
+import { assetUrl } from '../config/api.js';
 
 export const propertyLabel = {
   house: 'House',
@@ -21,7 +22,7 @@ export default function ListingCard({ listing }) {
   const favorites = useFavorites();
   const saved = Boolean(user && favorites?.isFavorite(listing._id));
 
-  const cover = listing.images?.[0]?.url;
+  const cover = assetUrl(listing.images?.[0]?.url);
   const city = listing.address?.city;
 
   const onToggleFavorite = (e) => {

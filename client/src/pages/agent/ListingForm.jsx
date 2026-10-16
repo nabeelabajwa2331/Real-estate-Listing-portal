@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import api, { errorMessage } from '../../api/axios.js';
 import LocationPicker from '../../components/LocationPicker.jsx';
+import { assetUrl } from '../../config/api.js';
 
 const empty = {
   title: '',
@@ -32,9 +33,9 @@ export default function ListingForm() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState(empty);
-  const [existing, setExisting] = useState([]); // images already stored on the listing
+  const [existing, setExisting] = useState([]);
   const [removed, setRemoved] = useState([]); // publicIds marked for deletion
-  const [files, setFiles] = useState([]); // newly picked File objects
+  const [files, setFiles] = useState([]);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(editing);
@@ -305,7 +306,7 @@ export default function ListingForm() {
               const isRemoved = removed.includes(img.publicId);
               return (
                 <div key={img.publicId || img.url} className={isRemoved ? 'photo removed' : 'photo'}>
-                  <img src={img.url} alt="Listing" />
+                  <img src={assetUrl(img.url)} alt="Listing" />
                   {isRemoved ? (
                     <button type="button" className="photo-action" onClick={() => undoExisting(img.publicId)}>
                       Undo
