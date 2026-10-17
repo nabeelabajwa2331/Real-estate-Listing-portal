@@ -450,30 +450,32 @@ environment variables as Docker build arguments, so set `VITE_MAPTILER_KEY` /
 ### Option C — Vercel (front end) + a separate API host
 
 Vercel hosts static front ends and serverless functions; it **cannot** run this
-project's long-running Express + Socket.IO server or its MongoDB-backed API.
-The practical setup is: **API on Render, client on Vercel.**
+project's long-running Express + Socket.IO server or its MongoDB-backed API. The
+practical setup is: **API on Render, client on Vercel**, with Vercel *proxying*
+API requests so the browser only ever talks to the Vercel origin.
 
 1. Deploy the API first (Option A or B) and note its public URL.
-2. On the API host set `CLIENT_URL` to the Vercel URL and `COOKIE_SAMESITE=none`
-   (cross-site cookies need `SameSite=None`; the cookie is already `Secure` in
-   production, and both sites must use HTTPS).
-3. On Vercel, import the repo and configure:
+2. Put that URL in `client/vercel.json` as the destination of the `/api`,
+   `/uploads` and `/socket.io` rewrites (already set to the demo API).
+3. On the API host set `CLIENT_URL` to the Vercel URL so CORS and email links
+   point at the front end. `COOKIE_SAMESITE=lax` is fine here because the browser
+   sees a single origin.
+4. On Vercel, import the repo and configure:
    - **Root Directory:** `client`
    - **Framework Preset:** Vite
    - **Install Command:** `npm install`
    - **Build Command:** `npm run build`
    - **Output Directory:** `dist`
-   - **Environment variables:** `VITE_API_URL=https://your-api.onrender.com`
-     (plus `VITE_MAPTILER_KEY` / `VITE_MAP_STYLE` if you use styled tiles)
-4. Redeploy the API so the new CORS and cookie settings take effect.
+   - Environment variables: `VITE_MAPTILER_KEY` / `VITE_MAP_STYLE` (optional,
+     for styled map tiles). Leave `VITE_API_URL` unset so requests stay relative.
+5. Redeploy the API so the new CORS settings apply.
 
-`VITE_API_URL` points the client at the API across origins (and loads uploaded
-images from it). When it is left empty the client uses the same origin, which is
-what the Docker/Render single-service deployment relies on. `client/vercel.json`
-adds the SPA fallback so client-side routes work on refresh.
-
-> Some browsers restrict third-party cookies. If sign-in misbehaves on Vercel,
-> host the client and API on the same site instead (Option A or B).
+`client/vercel.json` proxies `/api`, `/uploads` and `/socket.io` to the API host
+and falls back to `index.html` for client-side routes. Prefer calling the API
+directly (a different origin) instead? Set `VITE_API_URL` on Vercel and
+`COOKIE_SAMESITE=none` on the API — but some browsers restrict cross-site
+cookies, so the proxy is more reliable. Either way, Vercel does not proxy
+WebSockets, so live updates use Socket.IO's polling fallback.
 
 ### Option D — plain Node
 
