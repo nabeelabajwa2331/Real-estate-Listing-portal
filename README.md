@@ -6,10 +6,11 @@ design document — authentication, listings with admin approval, search + map,
 favorites and saved searches, inquiries with email notifications, and one-to-one
 chat.
 
-**Live demo:** https://real-estate-listing-portal-riay.onrender.com
+**Live app:** https://real-estate-listing-portal-hazel.vercel.app
 
-> The live demo runs on Render's free tier, so the first request after a period
-> of inactivity may take 30–60 seconds while the service wakes up.
+> The React front end is hosted on Vercel and proxies API calls to the Express
+> API on Render. Render's free tier spins down when idle, so the first request
+> after a period of inactivity may take 30–60 seconds while the API wakes up.
 
 ---
 
@@ -41,7 +42,7 @@ chat.
 - Vitest (client unit tests), Node's built-in `node:test` (server unit tests)
 - Docker (multi-stage build: client + API in one image)
 - GitHub Actions (CI: tests, client build, Docker build)
-- Render (Docker web service hosting)
+- Vercel (front-end hosting) + Render (API hosting)
 
 ---
 
@@ -412,7 +413,7 @@ the client's search summaries and avatar initials.
 
 ## Deployment
 
-### Option A — Docker (recommended)
+### Option A — Docker (single service)
 
 A multi-stage `Dockerfile` builds the React client and runs the API, which serves
 the SPA in production. Nothing else is needed on the host.
@@ -447,7 +448,7 @@ environment variables as Docker build arguments, so set `VITE_MAPTILER_KEY` /
 > Free-tier services spin down when idle, so the first request after inactivity
 > is slow. A paid plan (or any always-on host) avoids the cold start.
 
-### Option C — Vercel (front end) + a separate API host
+### Option C — Vercel (front end) + Render (API) — current setup
 
 Vercel hosts static front ends and serverless functions; it **cannot** run this
 project's long-running Express + Socket.IO server or its MongoDB-backed API. The
@@ -456,7 +457,7 @@ API requests so the browser only ever talks to the Vercel origin.
 
 1. Deploy the API first (Option A or B) and note its public URL.
 2. Put that URL in `client/vercel.json` as the destination of the `/api`,
-   `/uploads` and `/socket.io` rewrites (already set to the demo API).
+   `/uploads` and `/socket.io` rewrites (set it to your API's public URL).
 3. On the API host set `CLIENT_URL` to the Vercel URL so CORS and email links
    point at the front end. `COOKIE_SAMESITE=lax` is fine here because the browser
    sees a single origin.
@@ -545,6 +546,7 @@ server/
   server.js                 Entry point + http/socket server
 client/
   .env.example              Map tile settings (MapTiler key, style) + API URL
+  vercel.json               Rewrites /api, /uploads, /socket.io to the API host
   src/api/axios.js          Axios instance
   src/config/map.js         Tile URL, attribution and default view
   src/context/              Auth, Socket, Favorites, Inquiry, Chat

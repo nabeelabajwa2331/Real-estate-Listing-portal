@@ -19,7 +19,7 @@ import { notFound, errorHandler } from './middleware/errorHandler.js';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-// Behind a reverse proxy (Render, Railway, nginx), so rate limiting sees the
+// Behind a reverse proxy (PaaS, nginx, etc.), so rate limiting sees the
 // real client IP rather than the proxy's.
 app.set('trust proxy', 1);
 
