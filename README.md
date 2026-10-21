@@ -12,6 +12,10 @@ chat.
 > API on Render. Render's free tier spins down when idle, so the first request
 > after a period of inactivity may take 30–60 seconds while the API wakes up.
 
+> **Submission notes:** see [`SUBMISSION.md`](./SUBMISSION.md) for a
+> point-by-point response to the project review (links, feature verification and
+> test accounts).
+
 ---
 
 ## Technologies used
