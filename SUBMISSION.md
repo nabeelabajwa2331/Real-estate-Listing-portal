@@ -81,9 +81,12 @@ Seeded accounts (from `server/scripts/seed.js`):
 
 | Role | Email | Password |
 | --- | --- | --- |
-| Admin | `admin@example.com` | `Admin12345` |
+| Admin | `admin@example.com` | *provided separately to reviewers* |
 | Agent | `agent@example.com` | `Agent12345` |
 | Buyer | `buyer@example.com` | `Buyer12345` |
+
+> The admin password is intentionally **not** published in this repository; it is
+> supplied privately with the submission.
 
 Suggested click-paths:
 
@@ -136,8 +139,9 @@ Suggested click-paths:
 
 ## 8. Notes
 
-- The demo credentials are published in the seed script; **change them before using the
-  site publicly**.
+- The demo agent/buyer credentials are published in the seed script; **change them
+  before using the site publicly**. The admin password is not published and is shared
+  privately with reviewers.
 - Email verification is disabled in the deployed demo (`REQUIRE_EMAIL_VERIFICATION=false`),
   so accounts can sign in immediately. Configure `SMTP_*` to enable real verification
   emails.

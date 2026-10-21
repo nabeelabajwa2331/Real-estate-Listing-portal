@@ -170,11 +170,15 @@ npm run seed
 
 This creates:
 
-| Role  | Email               | Password     |
-| ----- | ------------------- | ------------ |
-| Admin | `admin@example.com` | `Admin12345` |
-| Agent | `agent@example.com` | `Agent12345` |
-| Buyer | `buyer@example.com` | `Buyer12345` |
+| Role  | Email               | Password                |
+| ----- | ------------------- | ----------------------- |
+| Admin | `admin@example.com` | *shared with reviewers* |
+| Agent | `agent@example.com` | `Agent12345`            |
+| Buyer | `buyer@example.com` | `Buyer12345`            |
+
+> The admin password is intentionally **not** published in this repository; it is
+> shared privately with reviewers. Never run the seed script against a production
+> database (it resets these demo accounts).
 
 …plus 8 approved listings across several cities. The script is idempotent: it
 resets these demo accounts and replaces the demo agent's listings on each run.
