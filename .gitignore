@@ -58,3 +58,4 @@ Thumbs.db
 
 # Editor files
 .vscode-test/
+.vercel
