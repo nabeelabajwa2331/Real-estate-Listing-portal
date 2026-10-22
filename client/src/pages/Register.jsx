@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { errorMessage } from '../api/axios.js';
+import AuthShell from '../components/AuthShell.jsx';
 import { useAuth, homeForRole } from '../context/AuthContext.jsx';
+import { isPakistaniPhone, normalizePakistaniPhone, PHONE_HINT, PHONE_MESSAGE } from '../utils/phone.js';
 
 const empty = { name: '', email: '', phone: '', password: '', confirm: '', role: 'user' };
 
@@ -11,20 +13,33 @@ export default function Register() {
   const [error, setError] = useState('');
   const [done, setDone] = useState('');
   const [busy, setBusy] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
 
   if (user) return <Navigate to={homeForRole(user.role)} replace />;
 
-  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const onChange = (e) => {
+    const { name, value } = e.target;
+    setForm((f) => ({ ...f, [name]: value }));
+    if (name === 'phone') setPhoneError('');
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (form.password !== form.confirm) return setError('Passwords do not match');
+    if (!isPakistaniPhone(form.phone)) {
+      setPhoneError(PHONE_MESSAGE);
+      return;
+    }
+    if (form.password !== form.confirm) {
+      setError('The two passwords do not match.');
+      return;
+    }
 
     setBusy(true);
     try {
       const { confirm, ...payload } = form;
-      setDone(await register(payload));
+      setDone(await register({ ...payload, phone: normalizePakistaniPhone(form.phone) }));
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -34,61 +49,151 @@ export default function Register() {
 
   if (done) {
     return (
-      <div className="card form">
-        <h1>Account created</h1>
-        <p className="alert alert-success">{done}</p>
-        <Link to="/login" className="btn btn-primary">
-          Go to sign in
-        </Link>
-      </div>
+      <AuthShell
+        eyebrow="You're in"
+        title="Account created"
+        subtitle="One last step before you start browsing."
+        asideTitle="Welcome to RealEstate."
+        asideText="Save your favourite homes, talk to agents and keep every search in one place."
+      >
+        <div className="auth-success">
+          <p className="alert alert-success">{done}</p>
+          <Link to="/login" className="btn btn-primary btn-lg">
+            Go to sign in
+          </Link>
+        </div>
+      </AuthShell>
     );
   }
 
   return (
-    <form className="card form" onSubmit={onSubmit}>
-      <h1>Create an account</h1>
-      <p className="muted small">Use a real email you can access — we'll send a verification link.</p>
-      {error && <p className="alert alert-error">{error}</p>}
+    <AuthShell
+      eyebrow="Join RealEstate"
+      title="Create your account"
+      subtitle="Free for buyers, renters and agents."
+      asideTitle="A better way to find your next place."
+      asideText="Search verified homes, save the ones you love and talk directly to the agent — without the noise."
+      footer={
+        <>
+          Already registered? <Link to="/login">Sign in</Link>
+        </>
+      }
+    >
+      <form className="form auth-form" onSubmit={onSubmit}>
+        {error && <p className="alert alert-error">{error}</p>}
 
-      <fieldset className="role-picker">
-        <legend>I want to</legend>
-        <label className={form.role === 'user' ? 'role active' : 'role'}>
-          <input type="radio" name="role" value="user" checked={form.role === 'user'} onChange={onChange} />
-          Buy or rent
-        </label>
-        <label className={form.role === 'agent' ? 'role active' : 'role'}>
-          <input type="radio" name="role" value="agent" checked={form.role === 'agent'} onChange={onChange} />
-          List properties (agent)
-        </label>
-      </fieldset>
+        <fieldset className="role-picker auth-role-picker">
+          <legend>I want to</legend>
+          <label className={form.role === 'user' ? 'role active' : 'role'}>
+            <input type="radio" name="role" value="user" checked={form.role === 'user'} onChange={onChange} />
+            <span className="role-icon" aria-hidden="true">
+              🏠
+            </span>
+            <span className="role-copy">
+              <strong>Buy or rent</strong>
+              <small>Browse, save and contact agents</small>
+            </span>
+          </label>
+          <label className={form.role === 'agent' ? 'role active' : 'role'}>
+            <input type="radio" name="role" value="agent" checked={form.role === 'agent'} onChange={onChange} />
+            <span className="role-icon" aria-hidden="true">
+              🔑
+            </span>
+            <span className="role-copy">
+              <strong>List properties</strong>
+              <small>Agent account and dashboard</small>
+            </span>
+          </label>
+        </fieldset>
 
-      <label>
-        Full name
-        <input name="name" value={form.name} onChange={onChange} required minLength={2} autoComplete="name" />
-      </label>
-      <label>
-        Email
-        <input type="email" name="email" value={form.email} onChange={onChange} required autoComplete="email" />
-      </label>
-      <label>
-        Phone
-        <input type="tel" name="phone" value={form.phone} onChange={onChange} required placeholder="03001234567" autoComplete="tel" />
-      </label>
-      <label>
-        Password
-        <input type="password" name="password" value={form.password} onChange={onChange} required minLength={8} autoComplete="new-password" />
-      </label>
-      <label>
-        Confirm password
-        <input type="password" name="confirm" value={form.confirm} onChange={onChange} required minLength={8} autoComplete="new-password" />
-      </label>
+        <div className="auth-field-grid">
+          <label>
+            Full name
+            <input
+              name="name"
+              value={form.name}
+              onChange={onChange}
+              required
+              minLength={2}
+              autoComplete="name"
+              placeholder="Ayesha Khan"
+            />
+          </label>
+          <label>
+            Phone
+            <input
+              type="tel"
+              name="phone"
+              value={form.phone}
+              onChange={onChange}
+              required
+              inputMode="tel"
+              maxLength={16}
+              placeholder="0300 1234567"
+              autoComplete="tel"
+              aria-invalid={phoneError ? 'true' : undefined}
+            />
+            <span className={phoneError ? 'field-hint field-hint-error' : 'field-hint'}>
+              {phoneError || PHONE_HINT}
+            </span>
+          </label>
+          <label className="span-2">
+            Email
+            <input
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={onChange}
+              required
+              autoComplete="email"
+              placeholder="you@example.com"
+            />
+          </label>
+          <label>
+            Password
+            <div className="password-wrap">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                value={form.password}
+                onChange={onChange}
+                required
+                minLength={8}
+                autoComplete="new-password"
+                placeholder="At least 8 characters"
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            </div>
+          </label>
+          <label>
+            Confirm password
+            <div className="password-wrap">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                name="confirm"
+                value={form.confirm}
+                onChange={onChange}
+                required
+                minLength={8}
+                autoComplete="new-password"
+                placeholder="Repeat your password"
+              />
+            </div>
+          </label>
+        </div>
 
-      <button className="btn btn-primary" disabled={busy}>
-        {busy ? 'Creating account...' : 'Register'}
-      </button>
-      <p className="small">
-        Already registered? <Link to="/login">Sign in</Link>
-      </p>
-    </form>
+        <button className="btn btn-primary btn-lg" disabled={busy}>
+          {busy ? 'Creating account...' : 'Create account'}
+        </button>
+        <p className="auth-terms muted small">By creating an account you agree to the fair-use rules of this demo.</p>
+      </form>
+    </AuthShell>
   );
 }

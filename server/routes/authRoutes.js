@@ -5,6 +5,7 @@ import { protect } from '../middleware/auth.js';
 import { authLimiter } from '../middleware/rateLimit.js';
 import { upload } from '../utils/upload.js';
 import { isDisallowedEmail, emailDomain, domainCanReceiveMail } from '../utils/email.js';
+import { isPakistaniPhone, normalizePakistaniPhone } from '../utils/phone.js';
 import {
   register,
   verifyEmail,
@@ -46,8 +47,9 @@ const name = () => body('name').trim().isLength({ min: 2, max: 80 }).withMessage
 const phone = () =>
   body('phone')
     .trim()
-    .matches(/^\+?[0-9\s-]{7,15}$/)
-    .withMessage('Enter a valid phone number');
+    .customSanitizer(normalizePakistaniPhone)
+    .custom((value) => isPakistaniPhone(value))
+    .withMessage('Enter a valid Pakistani mobile number (03XX XXXXXXX or +92 3XX XXXXXXX)');
 const password = (field) =>
   body(field).isLength({ min: 8, max: 72 }).withMessage('Password must be at least 8 characters');
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import api, { errorMessage } from '../api/axios.js';
+import AuthShell from '../components/AuthShell.jsx';
 import { useAuth, homeForRole } from '../context/AuthContext.jsx';
 
 export default function Login() {
@@ -48,35 +49,52 @@ export default function Login() {
   };
 
   return (
-    <form className="card form" onSubmit={onSubmit}>
-      <h1>Sign in</h1>
-      {error && <p className="alert alert-error">{error}</p>}
-      {notice && <p className="alert alert-success">{notice}</p>}
-      {notVerified && (
-        <button type="button" className="btn" onClick={resend}>
-          Resend verification email
+    <AuthShell
+      eyebrow="Welcome back"
+      title="Sign in"
+      subtitle="Use the email address you registered with."
+      asideTitle="Your next move starts here."
+      asideText="Pick up where you left off — saved homes, agent conversations and new listings are waiting."
+      action={
+        <Link to="/forgot-password" className="auth-action-link">
+          Forgot password?
+        </Link>
+      }
+      footer={
+        <>
+          No account yet? <Link to="/register">Create one</Link>
+        </>
+      }
+    >
+      <form className="form auth-form" onSubmit={onSubmit}>
+        {error && <p className="alert alert-error">{error}</p>}
+        {notice && <p className="alert alert-success">{notice}</p>}
+        {notVerified && (
+          <button type="button" className="btn" onClick={resend}>
+            Resend verification email
+          </button>
+        )}
+
+        <label>
+          Email
+          <input type="email" name="email" value={form.email} onChange={onChange} required autoComplete="email" />
+        </label>
+        <label>
+          Password
+          <input
+            type="password"
+            name="password"
+            value={form.password}
+            onChange={onChange}
+            required
+            autoComplete="current-password"
+          />
+        </label>
+
+        <button className="btn btn-primary btn-lg" disabled={busy}>
+          {busy ? 'Signing in...' : 'Sign in'}
         </button>
-      )}
-
-      <label>
-        Email
-        <input type="email" name="email" value={form.email} onChange={onChange} required autoComplete="email" />
-      </label>
-      <label>
-        Password
-        <input type="password" name="password" value={form.password} onChange={onChange} required autoComplete="current-password" />
-      </label>
-
-      <button className="btn btn-primary" disabled={busy}>
-        {busy ? 'Signing in...' : 'Sign in'}
-      </button>
-
-      <p className="small">
-        <Link to="/forgot-password">Forgot your password?</Link>
-      </p>
-      <p className="small">
-        No account yet? <Link to="/register">Register</Link>
-      </p>
-    </form>
+      </form>
+    </AuthShell>
   );
 }

@@ -107,7 +107,7 @@ const buildRange = (min, max) => {
   return Object.keys(range).length ? range : null;
 };
 
-// GET /api/listings  (public)
+// GET /api/listings  (signed-in members)
 // Filters: city, listingType, propertyType, minPrice, maxPrice, minArea, maxArea,
 // bedrooms, q, sort, page, limit, and map bounds (north, south, east, west).
 export const getListings = async (req, res) => {

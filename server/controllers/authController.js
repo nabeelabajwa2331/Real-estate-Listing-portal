@@ -3,6 +3,7 @@ import User from '../models/User.js';
 import PendingUser from '../models/PendingUser.js';
 import sendEmail from '../utils/sendEmail.js';
 import { uploadImages, deleteImage } from '../utils/upload.js';
+import { normalizePakistaniPhone } from '../utils/phone.js';
 import {
   sendTokenCookie,
   clearTokenCookie,
@@ -54,6 +55,7 @@ async function sendVerificationEmail(user, rawToken) {
 // POST /api/auth/register
 export const register = async (req, res) => {
   const { name, email, phone, password, role } = req.body;
+  const normalizedPhone = normalizePakistaniPhone(phone);
 
   if (await User.findOne({ email })) {
     return res.status(409).json({ message: 'An account with this email already exists' });
@@ -64,7 +66,7 @@ export const register = async (req, res) => {
   // Verification disabled (development) or this address is explicitly bypassed:
   // create a usable account immediately, no email step.
   if (bypassesVerification(email)) {
-    await User.create({ name, email, phone, password, role: resolvedRole, isVerified: true });
+    await User.create({ name, email, phone: normalizedPhone, password, role: resolvedRole, isVerified: true });
     return res.status(201).json({ message: 'Account created. You can sign in now.' });
   }
 
@@ -78,7 +80,7 @@ export const register = async (req, res) => {
     {
       name,
       email,
-      phone,
+      phone: normalizedPhone,
       passwordHash,
       role: resolvedRole,
       verifyToken: hashed,
@@ -274,7 +276,7 @@ export const updateMe = async (req, res) => {
   const user = await User.findById(req.user._id).select('+password');
 
   if (name !== undefined) user.name = name;
-  if (phone !== undefined) user.phone = phone;
+  if (phone !== undefined) user.phone = normalizePakistaniPhone(phone);
 
   if (newPassword) {
     if (!currentPassword || !(await user.matchPassword(currentPassword))) {

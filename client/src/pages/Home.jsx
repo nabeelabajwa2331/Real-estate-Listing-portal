@@ -97,19 +97,19 @@ export default function Home() {
         </div>
       ) : (
         <div className="hero-actions">
-          <Link to="/listings" className="btn btn-primary btn-lg">
-            Browse listings
-          </Link>
-          <Link to="/register" className="btn btn-lg">
+          <Link to="/register" className="btn btn-primary btn-lg">
             Create an account
+          </Link>
+          <Link to="/login" className="btn btn-lg">
+            Sign in
           </Link>
         </div>
       )}
 
       {!user && (
         <p className="hero-note muted small">
-          Browsing is open to everyone. <Link to="/login">Sign in</Link> to view full property
-          details, save favorites, contact agents and chat.
+          Browsing listings is available to signed-in members. <Link to="/register">Create a free
+          account</Link> to browse, save favorites, contact agents and chat.
         </p>
       )}
 
@@ -128,11 +128,9 @@ export default function Home() {
             <Link to="/dashboard/searches" className="home-account-chip">
               <b>{searchCount}</b> saved {searchCount === 1 ? 'search' : 'searches'}
             </Link>
-            <Link to="/inbox" className="home-account-chip">
-              <b>{inboxUnread}</b> unread {inboxUnread === 1 ? 'inquiry' : 'inquiries'}
-            </Link>
-            <Link to="/chat" className="home-account-chip">
-              <b>{chatUnread}</b> unread {chatUnread === 1 ? 'chat' : 'chats'}
+            <Link to="/messages" className="home-account-chip">
+              <b>{inboxUnread + chatUnread}</b> unread{' '}
+              {inboxUnread + chatUnread === 1 ? 'message' : 'messages'}
             </Link>
           </div>
         </div>

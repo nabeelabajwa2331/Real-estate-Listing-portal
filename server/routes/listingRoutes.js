@@ -37,7 +37,9 @@ const rules = [
 
 const id = () => param('id').isMongoId().withMessage('Invalid listing');
 
-router.get('/', getListings);
+// Browsing the catalogue is a member feature. Shared detail links stay public
+// for guests, but they only receive the photos from getListing below.
+router.get('/', protect, getListings);
 
 // The signed-in agent's own listings. Must come before '/:id'.
 router.get('/mine', protect, authorize('agent', 'admin'), getMyListings);

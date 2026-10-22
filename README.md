@@ -67,12 +67,13 @@ chat.
 
 - Agents create, edit and delete listings with up to 10 photos each
 - Image uploads to Cloudinary (falls back to local disk storage when unset)
-- Public listing browse with filters, sorting and pagination
-- Guests can open a listing and see its **photos only**; the full detail page
-  (price, address, description, amenities and agent) requires a free account
+- Signed-in listing browse with filters, sorting and pagination
+- Guests can open a shared listing link and see its **photos only**; the full
+  detail page (price, address, description, amenities and agent) and the browse
+  catalogue require a free account
 - Listing detail page with an image gallery for signed-in users
 - Agent phone and email are returned only to signed-in users — never to guests
-  and never in the public listings response
+  and never in the listings response
 - New and edited listings start as `pending` and stay hidden from the public
   until an admin approves them
 
@@ -99,19 +100,22 @@ chat.
 **Inquiries & chat**
 
 - Signed-in users send inquiries from a listing; agents get an inbox
-- Threaded replies with quoting
+- Threaded replies in a WhatsApp-style conversation view
 - Real-time delivery over Socket.IO, with unread badges
 - Email notifications on new messages (dev fallback prints to the terminal)
-- A separate real-time one-to-one chat between any two users
+- A unified WhatsApp-style **Messages** page that combines inquiries and
+  real-time one-to-one chat in a single list and thread view
 
 **Guest access**
 
-- Guests can browse the catalogue and open any property to see its photos.
-- Everything else needs a free account: price, address, description, amenities,
-  agent contact details, favorites, saved searches, inquiries and chat.
-- The API enforces this too — `GET /api/listings/:id` returns only `_id` and
-  `images` when there is no signed-in user, so the data cannot be read by
-  bypassing the UI.
+- Guests see aggregate landing-page stats and can open a shared property link
+  to view its photos.
+- The browse catalogue (`/listings`) requires a free account, as does everything
+  else: price, address, description, amenities, agent contact details, favorites,
+  saved searches, inquiries and chat.
+- The API enforces this too — `GET /api/listings` returns `401` without a session,
+  and `GET /api/listings/:id` returns only `_id` and `images` when there is no
+  signed-in user, so the data cannot be read by bypassing the UI.
 
 ---
 
@@ -290,7 +294,7 @@ accounts, run `npm run purge-unverified`.
 
 | Method | Path | Access | Purpose |
 | --- | --- | --- | --- |
-| GET | /api/listings | Public | Browse (filters: city, listingType, propertyType, minPrice, maxPrice, minArea, maxArea, bedrooms, q, north/south/east/west, sort, page, limit) |
+| GET | /api/listings | Signed in | Browse (filters: city, listingType, propertyType, minPrice, maxPrice, minArea, maxArea, bedrooms, q, north/south/east/west, sort, page, limit) |
 | GET | /api/listings/:id | Public / signed in | Guests receive photos only (`_id`, `images`); the full listing and agent contact details require sign-in. Increments the view count. |
 | GET | /api/listings/mine | Agent / admin | Listings owned by the signed-in agent |
 | POST | /api/listings | Agent / admin | Create a listing (`multipart/form-data`, up to 10 `images`) |
@@ -571,13 +575,13 @@ client/
   src/api/axios.js          Axios instance
   src/config/map.js         Tile URL, attribution and default view
   src/context/              Auth, Socket, Favorites, Inquiry, Chat
-  src/utils/                search.js, avatar.js (each with a *.test.js)
+  src/utils/                search.js, avatar.js, phone.js
   src/routes/               ProtectedRoute, RoleRoute
   src/components/           Navbar, ListingCard, ImageGallery, ListingMap,
-                            LocationPicker, Avatar
-  src/pages/                Home, Listings, ListingDetail, Inbox, Thread, Chat,
-                            Login, Register, VerifyEmail, ForgotPassword,
-                            ResetPassword, Profile
+                            LocationPicker, Avatar, SmartImage, AuthShell
+  src/pages/                Home, Listings, ListingDetail, Messages, Login,
+                            Register, VerifyEmail, ForgotPassword, ResetPassword,
+                            Profile
   src/pages/agent/          AgentDashboard, ListingForm
   src/pages/admin/          AdminDashboard
   src/pages/dashboard/      DashboardLayout, Overview, Favorites, SavedSearches

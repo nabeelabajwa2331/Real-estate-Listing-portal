@@ -75,17 +75,18 @@ reason; editing an approved listing returns it to the `pending` queue for re-rev
 
 ### Public data and sign-in
 
-- **What guests see:** the catalogue of listing cards, aggregate stats (live listings,
-  verified agents, cities) and the photos of any property.
-- **What requires an account:** the full property detail — price, address, description,
-  amenities, agent name — and all agent contact information. A guest who opens a property
-  sees its photos plus a *“Sign in to view this property”* panel.
+- **What guests see:** aggregate stats on the landing page (live listings, verified agents,
+  cities) and the photos of any property opened through a shared link.
+- **What requires an account:** the browse catalogue (`/listings`), the full property detail
+  — price, address, description, amenities, agent name — and all agent contact information.
+  A guest who opens a shared property link sees its photos plus a *“Sign in to view this
+  property”* panel.
 - **Why:** agent phone numbers and emails are personal data, and the listing details are
   the product's value. Restricting them also reduces scraping and spam. The rule is
-  enforced by the API, not just the UI: `GET /api/listings/:id` returns only `_id` and
-  `images` when no user is signed in.
-- **What sign-in unlocks:** full property details, agent phone/email, favorites, saved
-  searches, inquiries, real-time chat, and the agent/admin dashboards.
+  enforced by the API, not just the UI: `GET /api/listings` returns `401` without a session,
+  and `GET /api/listings/:id` returns only `_id` and `images` when no user is signed in.
+- **What sign-in unlocks:** the catalogue, full property details, agent phone/email,
+  favorites, saved searches, inquiries, real-time chat, and the agent/admin dashboards.
 - **Landing-page numbers** are aggregate counts of approved listings, agents and cities —
   they contain no private user data and are safe to display publicly.
 
@@ -113,10 +114,12 @@ Suggested click-paths:
 3. **Admin approval** — sign in as admin → **Admin** → review the pending queue →
    **Approve** or **Reject** with a reason.
 4. **Inquiries** — as the buyer, open a listing → **Contact agent** → send a message;
-   then sign in as the agent → **Inbox** → open the thread and reply.
-5. **Chat** — sign in as any user → **Chat** → start a one-to-one conversation.
-6. **Guest gating** — sign out → open any listing: only the photos and a sign-in panel
-   are shown. In DevTools → Network, the `GET /api/listings/:id` response contains only
+   then sign in as the agent → **Messages** → **Inquiries** → open the thread and reply.
+5. **Chat** — sign in as any user → **Messages** → **New chat** → start a one-to-one
+   conversation. Chats and inquiries share the same WhatsApp-style list.
+6. **Guest gating** — sign out → open `/listings`: you are redirected to sign in. A shared
+   listing link still opens and shows only the photos and a sign-in panel. In DevTools →
+   Network, `GET /api/listings` returns `401`, and `GET /api/listings/:id` contains only
    `_id` and `images` (no price, address or agent contact). Sign in and reload to see the
    full details and the Call/Email buttons.
 

@@ -51,7 +51,9 @@ app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 
 // Locally uploaded images (used when Cloudinary is not configured)
-app.use('/uploads', express.static(path.join(here, 'uploads')));
+// Uploaded listing photos never change once written, so let browsers keep
+// them instead of re-downloading them on every visit.
+app.use('/uploads', express.static(path.join(here, 'uploads'), { maxAge: '30d', immutable: true }));
 
 // Broad rate limit for the whole API.
 app.use('/api', apiLimiter);

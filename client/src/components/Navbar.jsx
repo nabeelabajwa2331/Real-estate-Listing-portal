@@ -11,6 +11,7 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const { unread } = useInquiries();
   const { unread: chatUnread } = useChat();
+  const messagesUnread = unread + chatUnread;
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -62,19 +63,14 @@ export default function Navbar() {
         </button>
 
         <nav id="primary-navigation" className={menuOpen ? 'nav-links open' : 'nav-links'}>
-          <NavLink to="/listings">Browse</NavLink>
-
           {user ? (
             <>
+              <NavLink to="/listings">Browse</NavLink>
               <NavLink to={homeForRole(user.role)}>{dashboardLabel[user.role]}</NavLink>
               <NavLink to="/dashboard/favorites">Saved</NavLink>
-              <NavLink to="/chat" className="nav-inbox">
-                Chat
-                {chatUnread > 0 && <span className="nav-badge">{chatUnread}</span>}
-              </NavLink>
-              <NavLink to="/inbox" className="nav-inbox">
-                Inbox
-                {unread > 0 && <span className="nav-badge">{unread}</span>}
+              <NavLink to="/messages" className="nav-inbox">
+                Messages
+                {messagesUnread > 0 && <span className="nav-badge">{messagesUnread}</span>}
               </NavLink>
               <NavLink to="/profile" className="nav-user">
                 <Avatar user={user} size={24} />
