@@ -1,6 +1,11 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+// In development the client talks to the API through Vite's proxy so the
+// browser sees a single origin and the login cookie works. Point it at a
+// deployed API with VITE_PROXY_TARGET (e.g. when testing against Render).
+const apiTarget = process.env.VITE_PROXY_TARGET || 'http://localhost:5000';
+
 export default defineConfig({
   plugins: [react()],
   build: {
@@ -19,11 +24,11 @@ export default defineConfig({
     // Requests to /api go to the Express server, so the browser sees one origin
     // and the login cookie works without extra CORS setup in development.
     proxy: {
-      '/api': { target: 'http://localhost:5000', changeOrigin: true },
+      '/api': { target: apiTarget, changeOrigin: true },
       // Locally stored listing images (used when Cloudinary is not configured)
-      '/uploads': { target: 'http://localhost:5000', changeOrigin: true },
+      '/uploads': { target: apiTarget, changeOrigin: true },
       // Socket.IO (websocket) so the login cookie is sent with the handshake
-      '/socket.io': { target: 'http://localhost:5000', ws: true, changeOrigin: true },
+      '/socket.io': { target: apiTarget, ws: true, changeOrigin: true },
     },
   },
 });

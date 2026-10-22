@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { assetUrl } from '../config/api.js';
+import SmartImage from './SmartImage.jsx';
 
 // Main photo plus a thumbnail strip, with prev/next controls. Renders a
 // graceful placeholder when a listing has no images yet.
@@ -7,7 +8,13 @@ export default function ImageGallery({ images = [], title = '' }) {
   const [active, setActive] = useState(0);
 
   if (!images.length) {
-    return <div className="gallery gallery-empty">No photos for this listing</div>;
+    return (
+      <div className="gallery">
+        <div className="gallery-main">
+          <SmartImage alt={`No photos for ${title || 'this listing'}`} />
+        </div>
+      </div>
+    );
   }
 
   const current = images[Math.min(active, images.length - 1)];
@@ -16,7 +23,7 @@ export default function ImageGallery({ images = [], title = '' }) {
   return (
     <div className="gallery">
       <div className="gallery-main">
-        <img src={assetUrl(current.url)} alt={`${title} — photo ${active + 1}`} />
+        <SmartImage src={assetUrl(current.url)} alt={`${title} — photo ${active + 1}`} loading="eager" />
 
         {images.length > 1 && (
           <>
@@ -43,7 +50,7 @@ export default function ImageGallery({ images = [], title = '' }) {
               onClick={() => setActive(i)}
               aria-label={`View photo ${i + 1}`}
             >
-              <img src={assetUrl(img.url)} alt={`Thumbnail ${i + 1}`} />
+              <SmartImage src={assetUrl(img.url)} alt={`Thumbnail ${i + 1}`} loading="lazy" />
             </button>
           ))}
         </div>

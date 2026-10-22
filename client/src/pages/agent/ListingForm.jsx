@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import api, { errorMessage } from '../../api/axios.js';
 import LocationPicker from '../../components/LocationPicker.jsx';
+import SmartImage from '../../components/SmartImage.jsx';
 import { assetUrl } from '../../config/api.js';
 
 const empty = {
@@ -306,7 +307,7 @@ export default function ListingForm() {
               const isRemoved = removed.includes(img.publicId);
               return (
                 <div key={img.publicId || img.url} className={isRemoved ? 'photo removed' : 'photo'}>
-                  <img src={assetUrl(img.url)} alt="Listing" />
+                  <SmartImage src={assetUrl(img.url)} alt="Listing" loading="lazy" />
                   {isRemoved ? (
                     <button type="button" className="photo-action" onClick={() => undoExisting(img.publicId)}>
                       Undo

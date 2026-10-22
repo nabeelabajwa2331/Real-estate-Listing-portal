@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-label="Property photo unavailable">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e2eae1" />
+      <stop offset="1" stop-color="#f2ede2" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#bg)" />
+  <g fill="none" stroke="#7e9e8a" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" opacity="0.9">
+    <path d="M430 466 600 326l170 140" />
+    <path d="M472 446v150h256V446" />
+    <path d="M560 596v-86h80v86" />
+  </g>
+  <text x="600" y="676" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="28" letter-spacing="1" fill="#5f7f6b">Photo coming soon</text>
+</svg>

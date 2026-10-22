@@ -131,7 +131,7 @@ export default function Chat() {
 
   return (
     <section className="chat">
-      <div className="chat-layout">
+      <div className={activeId ? 'chat-layout chat-layout-active' : 'chat-layout'}>
         <aside className="chat-side card">
           <div className="chat-side-head">
             <h1>Messages</h1>
@@ -192,6 +192,14 @@ export default function Chat() {
           {conversation ? (
             <>
               <header className="chat-main-head">
+                <button
+                  type="button"
+                  className="chat-back"
+                  onClick={() => navigate('/chat')}
+                  aria-label="Back to conversations"
+                >
+                  ←
+                </button>
                 <Avatar user={conversation.user} size={38} />
                 <div>
                   <p className="chat-main-name">{conversation.user?.name}</p>

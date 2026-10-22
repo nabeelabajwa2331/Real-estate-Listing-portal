@@ -68,7 +68,11 @@ chat.
 - Agents create, edit and delete listings with up to 10 photos each
 - Image uploads to Cloudinary (falls back to local disk storage when unset)
 - Public listing browse with filters, sorting and pagination
-- Listing detail page with an image gallery
+- Guests can open a listing and see its **photos only**; the full detail page
+  (price, address, description, amenities and agent) requires a free account
+- Listing detail page with an image gallery for signed-in users
+- Agent phone and email are returned only to signed-in users — never to guests
+  and never in the public listings response
 - New and edited listings start as `pending` and stay hidden from the public
   until an admin approves them
 
@@ -99,6 +103,15 @@ chat.
 - Real-time delivery over Socket.IO, with unread badges
 - Email notifications on new messages (dev fallback prints to the terminal)
 - A separate real-time one-to-one chat between any two users
+
+**Guest access**
+
+- Guests can browse the catalogue and open any property to see its photos.
+- Everything else needs a free account: price, address, description, amenities,
+  agent contact details, favorites, saved searches, inquiries and chat.
+- The API enforces this too — `GET /api/listings/:id` returns only `_id` and
+  `images` when there is no signed-in user, so the data cannot be read by
+  bypassing the UI.
 
 ---
 
@@ -278,7 +291,7 @@ accounts, run `npm run purge-unverified`.
 | Method | Path | Access | Purpose |
 | --- | --- | --- | --- |
 | GET | /api/listings | Public | Browse (filters: city, listingType, propertyType, minPrice, maxPrice, minArea, maxArea, bedrooms, q, north/south/east/west, sort, page, limit) |
-| GET | /api/listings/:id | Public | Listing detail (increments the view count) |
+| GET | /api/listings/:id | Public / signed in | Guests receive photos only (`_id`, `images`); the full listing and agent contact details require sign-in. Increments the view count. |
 | GET | /api/listings/mine | Agent / admin | Listings owned by the signed-in agent |
 | POST | /api/listings | Agent / admin | Create a listing (`multipart/form-data`, up to 10 `images`) |
 | PUT | /api/listings/:id | Owner / admin | Update a listing (add `images`, delete with `removeImages`) |

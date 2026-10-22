@@ -4,6 +4,7 @@ import api, { errorMessage } from '../../api/axios.js';
 import { formatPrice, propertyLabel } from '../../components/ListingCard.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { assetUrl } from '../../config/api.js';
+import SmartImage from '../../components/SmartImage.jsx';
 
 const statusTabs = [
   ['pending', 'Pending'],
@@ -123,11 +124,11 @@ function ApprovalQueue() {
           {listings.map((listing) => (
             <article className="card review-card" key={listing._id}>
               <div className="review-media">
-                {listing.images?.[0]?.url ? (
-                  <img src={assetUrl(listing.images[0].url)} alt="" />
-                ) : (
-                  <span className="muted small">No photo</span>
-                )}
+                <SmartImage
+                  src={listing.images?.[0]?.url ? assetUrl(listing.images[0].url) : undefined}
+                  alt=""
+                  loading="lazy"
+                />
               </div>
 
               <div className="review-body">
@@ -303,10 +304,10 @@ function UsersPanel() {
                       {u.name}
                       {isSelf && <span className="muted small"> (you)</span>}
                     </td>
-                    <td>{u.email}</td>
-                    <td>{u.role}</td>
-                    <td>{u.isVerified ? 'Yes' : 'No'}</td>
-                    <td>
+                    <td data-label="Email">{u.email}</td>
+                    <td data-label="Role">{u.role}</td>
+                    <td data-label="Verified">{u.isVerified ? 'Yes' : 'No'}</td>
+                    <td data-label="Status">
                       <span className={u.isActive ? 'status status-approved' : 'status status-rejected'}>
                         {u.isActive ? 'Active' : 'Deactivated'}
                       </span>

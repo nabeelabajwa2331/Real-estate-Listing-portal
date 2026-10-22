@@ -2,6 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/axios.js';
 import { useAuth, homeForRole } from '../context/AuthContext.jsx';
+import { useFavorites } from '../context/FavoritesContext.jsx';
+import { useInquiries } from '../context/InquiryContext.jsx';
+import { useChat } from '../context/ChatContext.jsx';
+
+const roleLabel = { admin: 'Administrator', agent: 'Agent', user: 'Buyer / renter' };
 
 const features = [
   {
@@ -37,7 +42,11 @@ const features = [
 
 export default function Home() {
   const { user } = useAuth();
+  const { count: favoritesCount } = useFavorites();
+  const { unread: inboxUnread } = useInquiries();
+  const { unread: chatUnread } = useChat();
   const [stats, setStats] = useState(null);
+  const [searchCount, setSearchCount] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -49,6 +58,22 @@ export default function Home() {
       active = false;
     };
   }, []);
+
+  // Personal numbers come from the signed-in user's own data.
+  useEffect(() => {
+    if (!user) {
+      setSearchCount(0);
+      return undefined;
+    }
+    let active = true;
+    api
+      .get('/saved-searches')
+      .then((res) => active && setSearchCount(res.data.searches.length))
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   const format = (value) => (stats ? new Intl.NumberFormat('en-US').format(value) : '—');
 
@@ -78,6 +103,38 @@ export default function Home() {
           <Link to="/register" className="btn btn-lg">
             Create an account
           </Link>
+        </div>
+      )}
+
+      {!user && (
+        <p className="hero-note muted small">
+          Browsing is open to everyone. <Link to="/login">Sign in</Link> to view full property
+          details, save favorites, contact agents and chat.
+        </p>
+      )}
+
+      {user && (
+        <div className="home-account card">
+          <div>
+            <p className="home-account-hello">Welcome back, {user.name}</p>
+            <p className="muted small">
+              Signed in as {roleLabel[user.role] || 'Member'}. These numbers are yours.
+            </p>
+          </div>
+          <div className="home-account-links">
+            <Link to="/dashboard/favorites" className="home-account-chip">
+              <b>{favoritesCount}</b> saved {favoritesCount === 1 ? 'property' : 'properties'}
+            </Link>
+            <Link to="/dashboard/searches" className="home-account-chip">
+              <b>{searchCount}</b> saved {searchCount === 1 ? 'search' : 'searches'}
+            </Link>
+            <Link to="/inbox" className="home-account-chip">
+              <b>{inboxUnread}</b> unread {inboxUnread === 1 ? 'inquiry' : 'inquiries'}
+            </Link>
+            <Link to="/chat" className="home-account-chip">
+              <b>{chatUnread}</b> unread {chatUnread === 1 ? 'chat' : 'chats'}
+            </Link>
+          </div>
         </div>
       )}
 

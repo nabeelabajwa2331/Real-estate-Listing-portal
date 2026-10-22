@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFavorites } from '../context/FavoritesContext.jsx';
 import { assetUrl } from '../config/api.js';
+import SmartImage from './SmartImage.jsx';
 
 export const propertyLabel = {
   house: 'House',
@@ -35,11 +36,7 @@ export default function ListingCard({ listing }) {
   return (
     <Link to={`/listings/${listing._id}`} className="listing-card">
       <div className="listing-card-media">
-        {cover ? (
-          <img src={cover} alt={listing.title} loading="lazy" />
-        ) : (
-          <span className="listing-card-empty">No photo</span>
-        )}
+        <SmartImage src={cover} alt={listing.title} loading="lazy" />
         <span className={`tag tag-${listing.listingType}`}>
           {listing.listingType === 'rent' ? 'For rent' : 'For sale'}
         </span>

@@ -103,12 +103,12 @@ export default function AgentDashboard() {
                       <span className="reject-note">Reason: {listing.rejectionReason}</span>
                     )}
                   </td>
-                  <td>{formatPrice(listing)}</td>
-                  <td>{propertyLabel[listing.propertyType] || listing.propertyType}</td>
-                  <td>
+                  <td data-label="Price">{formatPrice(listing)}</td>
+                  <td data-label="Type">{propertyLabel[listing.propertyType] || listing.propertyType}</td>
+                  <td data-label="Status">
                     <span className={`status status-${listing.status}`}>{statusLabel[listing.status]}</span>
                   </td>
-                  <td>{listing.views}</td>
+                  <td data-label="Views">{listing.views}</td>
                   <td className="table-actions">
                     <Link to={`/agent/${listing._id}/edit`} className="btn btn-sm">
                       Edit

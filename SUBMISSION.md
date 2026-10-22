@@ -73,6 +73,22 @@ All items below are implemented and were **verified against the live deployment 
 from the public listing feed until an admin approves them. Rejecting a listing records a
 reason; editing an approved listing returns it to the `pending` queue for re-review.
 
+### Public data and sign-in
+
+- **What guests see:** the catalogue of listing cards, aggregate stats (live listings,
+  verified agents, cities) and the photos of any property.
+- **What requires an account:** the full property detail — price, address, description,
+  amenities, agent name — and all agent contact information. A guest who opens a property
+  sees its photos plus a *“Sign in to view this property”* panel.
+- **Why:** agent phone numbers and emails are personal data, and the listing details are
+  the product's value. Restricting them also reduces scraping and spam. The rule is
+  enforced by the API, not just the UI: `GET /api/listings/:id` returns only `_id` and
+  `images` when no user is signed in.
+- **What sign-in unlocks:** full property details, agent phone/email, favorites, saved
+  searches, inquiries, real-time chat, and the agent/admin dashboards.
+- **Landing-page numbers** are aggregate counts of approved listings, agents and cities —
+  they contain no private user data and are safe to display publicly.
+
 ---
 
 ## 5. How to test (demo accounts)
@@ -99,6 +115,10 @@ Suggested click-paths:
 4. **Inquiries** — as the buyer, open a listing → **Contact agent** → send a message;
    then sign in as the agent → **Inbox** → open the thread and reply.
 5. **Chat** — sign in as any user → **Chat** → start a one-to-one conversation.
+6. **Guest gating** — sign out → open any listing: only the photos and a sign-in panel
+   are shown. In DevTools → Network, the `GET /api/listings/:id` response contains only
+   `_id` and `images` (no price, address or agent contact). Sign in and reload to see the
+   full details and the Call/Email buttons.
 
 > For a quick end-to-end check of the approval flow, sign in as the agent, create a
 > listing, then sign in as the admin and approve it.

@@ -5,6 +5,7 @@ import Avatar from '../components/Avatar.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useInquiries } from '../context/InquiryContext.jsx';
 import { assetUrl } from '../config/api.js';
+import SmartImage from '../components/SmartImage.jsx';
 
 const timeAgo = (value) => {
   if (!value) return '';
@@ -96,11 +97,11 @@ export default function Inbox() {
               <li key={inquiry._id}>
                 <Link to={`/inbox/${inquiry._id}`} className="thread-row card">
                   <div className="thread-thumb">
-                    {inquiry.listing?.images?.[0]?.url ? (
-                      <img src={assetUrl(inquiry.listing.images[0].url)} alt="" />
-                    ) : (
-                      <span className="muted small">No photo</span>
-                    )}
+                    <SmartImage
+                      src={inquiry.listing?.images?.[0]?.url ? assetUrl(inquiry.listing.images[0].url) : undefined}
+                      alt=""
+                      loading="lazy"
+                    />
                   </div>
                   <div className="thread-info">
                     <div className="thread-top">

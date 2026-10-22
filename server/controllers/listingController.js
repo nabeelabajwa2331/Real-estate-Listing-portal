@@ -144,11 +144,13 @@ export const getListings = async (req, res) => {
   }
 
   const [listings, total] = await Promise.all([
+    // Contact details are deliberately not included in the public list: they
+    // are only returned from the detail endpoint to signed-in users.
     Listing.find(filter)
       .sort(sort)
       .skip((page - 1) * limit)
       .limit(limit)
-      .populate('agent', 'name phone'),
+      .populate('agent', 'name'),
     Listing.countDocuments(filter),
   ]);
 
@@ -164,7 +166,10 @@ export const getMyListings = async (req, res) => {
 // GET /api/listings/:id  (public, but pending/rejected listings are only
 // visible to their owner or an admin)
 export const getListing = async (req, res) => {
-  const listing = await Listing.findById(req.params.id).populate('agent', 'name phone email createdAt');
+  // Guests can read the listing, but the agent's phone and email are private:
+  // they are only populated for signed-in users.
+  const agentFields = req.user ? 'name phone email avatar createdAt' : 'name avatar createdAt';
+  const listing = await Listing.findById(req.params.id).populate('agent', agentFields);
   if (!listing) return res.status(404).json({ message: 'Listing not found' });
 
   const isOwner =
@@ -175,6 +180,18 @@ export const getListing = async (req, res) => {
 
   listing.views += 1;
   await listing.save();
+
+  // Visitors who are not signed in only get the photos. Everything else
+  // (price, address, description, agent contact) requires an account.
+  if (!req.user) {
+    return res.json({
+      listing: {
+        _id: listing._id,
+        images: listing.images,
+      },
+    });
+  }
+
   res.json({ listing });
 };
 

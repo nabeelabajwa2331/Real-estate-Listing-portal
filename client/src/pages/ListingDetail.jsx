@@ -10,7 +10,7 @@ const statusLabel = { pending: 'Pending review', approved: 'Approved', rejected:
 
 export default function ListingDetail() {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const favorites = useFavorites();
   const navigate = useNavigate();
   const [listing, setListing] = useState(null);
@@ -34,6 +34,8 @@ export default function ListingDetail() {
     };
   }, [id]);
 
+  if (authLoading) return <p className="muted center">Loading...</p>;
+
   if (loading) return <p className="muted center">Loading listing...</p>;
 
   if (error) {
@@ -45,6 +47,41 @@ export default function ListingDetail() {
           Back to listings
         </Link>
       </div>
+    );
+  }
+
+  if (!listing) return <p className="muted center">Listing unavailable.</p>;
+
+  // Visitors who are not signed in may only see the photos. The API enforces
+  // this too, so the rest of the listing is not even sent to the browser.
+  if (!user) {
+    return (
+      <article className="listing-detail">
+        <ImageGallery images={listing.images} title="Property" />
+
+        <div className="card guest-lock">
+          <span className="guest-lock-icon" aria-hidden="true">
+            🔒
+          </span>
+          <h1>Sign in to view this property</h1>
+          <p className="muted">
+            Photos are public. Sign in to see the price, location, description, amenities and the
+            agent&apos;s contact details — or create an account in a few seconds.
+          </p>
+          <div className="guest-lock-actions">
+            <Link
+              to="/login"
+              state={{ from: { pathname: `/listings/${listing._id}` } }}
+              className="btn btn-primary btn-lg"
+            >
+              Sign in
+            </Link>
+            <Link to="/register" className="btn btn-lg">
+              Create an account
+            </Link>
+          </div>
+        </div>
+      </article>
     );
   }
 
@@ -175,6 +212,7 @@ export default function ListingDetail() {
           <section className="card agent-card">
             <h2>Listed by</h2>
             <p className="agent-name">{agent?.name || 'Agent'}</p>
+
             {agent?.phone && (
               <a className="btn btn-primary" href={`tel:${agent.phone}`}>
                 Call {agent.phone}
@@ -185,16 +223,17 @@ export default function ListingDetail() {
                 Email agent
               </a>
             )}
-            {user && !isOwner && (
+            {!isOwner && (
               <button type="button" className="btn" onClick={startChat}>
                 Chat with agent
               </button>
             )}
+
             <p className="muted small">
               {listing.views} {listing.views === 1 ? 'view' : 'views'}
             </p>
 
-            {isOwner ? null : user ? (
+            {user && !isOwner && (
               <form className="inquiry-form" onSubmit={sendInquiry}>
                 <label>
                   Message the agent
@@ -212,10 +251,6 @@ export default function ListingDetail() {
                   {inquiryBusy ? 'Sending...' : 'Send inquiry'}
                 </button>
               </form>
-            ) : (
-              <p className="muted small">
-                <Link to="/login">Sign in</Link> to contact the agent.
-              </p>
             )}
           </section>
         </aside>

@@ -1,4 +1,5 @@
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import Avatar from './Avatar.jsx';
 import { useAuth, homeForRole } from '../context/AuthContext.jsx';
 import { useInquiries } from '../context/InquiryContext.jsx';
@@ -11,8 +12,26 @@ export default function Navbar() {
   const { unread } = useInquiries();
   const { unread: chatUnread } = useChat();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Close the mobile menu whenever the route changes.
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
+
+  // Allow keyboard users to dismiss with Escape.
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setMenuOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [menuOpen]);
 
   const handleLogout = async () => {
+    setMenuOpen(false);
     await logout();
     navigate('/');
   };
@@ -20,14 +39,29 @@ export default function Navbar() {
   return (
     <header className="navbar">
       <div className="container navbar-inner">
-        <Link to="/" className="brand">
+        <Link to="/" className="brand" onClick={() => setMenuOpen(false)}>
           <span className="brand-mark" aria-hidden="true">
             RE
           </span>
           RealEstate
         </Link>
 
-        <nav className="nav-links">
+        <button
+          type="button"
+          className="nav-toggle"
+          aria-expanded={menuOpen}
+          aria-controls="primary-navigation"
+          aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          <span className="nav-toggle-box" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </span>
+        </button>
+
+        <nav id="primary-navigation" className={menuOpen ? 'nav-links open' : 'nav-links'}>
           <NavLink to="/listings">Browse</NavLink>
 
           {user ? (
