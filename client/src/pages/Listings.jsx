@@ -316,10 +316,10 @@ export default function Listings() {
 
       {notice && <p className="alert alert-success">{notice}</p>}
 
-      <div className="search-layout">
+      <div className="search-layout" aria-busy={loading}>
         <div className="search-results">
           {error && <p className="alert alert-error">{error}</p>}
-          {loading && <p className="muted center">Loading listings...</p>}
+          {loading && listings.length === 0 && <p className="muted center">Loading listings...</p>}
 
           {!loading && !error && listings.length === 0 && (
             <div className="card center empty-state">
@@ -328,7 +328,7 @@ export default function Listings() {
             </div>
           )}
 
-          {!loading && listings.length > 0 && (
+          {!error && listings.length > 0 && (
             <>
               <div className="search-list">
                 {listings.map((listing) => (
