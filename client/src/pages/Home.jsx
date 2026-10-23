@@ -1,12 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/axios.js';
-import { useAuth, homeForRole } from '../context/AuthContext.jsx';
-import { useFavorites } from '../context/FavoritesContext.jsx';
-import { useInquiries } from '../context/InquiryContext.jsx';
-import { useChat } from '../context/ChatContext.jsx';
-
-const roleLabel = { admin: 'Administrator', agent: 'Agent', user: 'Buyer / renter' };
+import { useAuth } from '../context/AuthContext.jsx';
 
 const features = [
   {
@@ -42,11 +37,7 @@ const features = [
 
 export default function Home() {
   const { user } = useAuth();
-  const { count: favoritesCount } = useFavorites();
-  const { unread: inboxUnread } = useInquiries();
-  const { unread: chatUnread } = useChat();
   const [stats, setStats] = useState(null);
-  const [searchCount, setSearchCount] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -59,84 +50,55 @@ export default function Home() {
     };
   }, []);
 
-  // Personal numbers come from the signed-in user's own data.
-  useEffect(() => {
-    if (!user) {
-      setSearchCount(0);
-      return undefined;
-    }
-    let active = true;
-    api
-      .get('/saved-searches')
-      .then((res) => active && setSearchCount(res.data.searches.length))
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [user]);
-
   const format = (value) => (stats ? new Intl.NumberFormat('en-US').format(value) : '—');
 
   return (
-    <section className="hero">
-      <span className="eyebrow">Trusted real-estate platform</span>
+    <section className="home-page">
+      <div className="home-hero">
+        <div className="home-hero-copy">
+          <p className="hero-kicker">Pakistan&apos;s property portal</p>
+          <h1>Find a home you can move into with confidence.</h1>
+          <p className="home-lede">
+            Verified listings from agents, with search, map view, favorites and direct contact —
+            without the noise.
+          </p>
 
-      <h1>Find your next home in one place</h1>
-      <p className="hero-sub">
-        Verified listings from agents, with search, map view, favorites and direct contact.
-      </p>
+          {user ? (
+            <div className="hero-actions">
+              <Link to="/listings" className="btn btn-primary btn-lg">
+                Browse listings
+              </Link>
+            </div>
+          ) : (
+            <div className="hero-actions">
+              <Link to="/register" className="btn btn-primary btn-lg">
+                Create a free account
+              </Link>
+              <Link to="/login" className="btn btn-lg">
+                Sign in
+              </Link>
+            </div>
+          )}
 
-      {user ? (
-        <div className="hero-actions">
-          <Link to={homeForRole(user.role)} className="btn btn-primary btn-lg">
-            Go to your area
-          </Link>
-          <Link to="/listings" className="btn btn-lg">
-            Browse listings
-          </Link>
-        </div>
-      ) : (
-        <div className="hero-actions">
-          <Link to="/register" className="btn btn-primary btn-lg">
-            Create an account
-          </Link>
-          <Link to="/login" className="btn btn-lg">
-            Sign in
-          </Link>
-        </div>
-      )}
-
-      {!user && (
-        <p className="hero-note muted small">
-          Browsing listings is available to signed-in members. <Link to="/register">Create a free
-          account</Link> to browse, save favorites, contact agents and chat.
-        </p>
-      )}
-
-      {user && (
-        <div className="home-account card">
-          <div>
-            <p className="home-account-hello">Welcome back, {user.name}</p>
-            <p className="muted small">
-              Signed in as {roleLabel[user.role] || 'Member'}. These numbers are yours.
+          {!user && (
+            <p className="hero-note muted small">
+              Listings are available to signed-in members. Create a free account to browse, save
+              favorites, contact agents and chat.
             </p>
-          </div>
-          <div className="home-account-links">
-            <Link to="/dashboard/favorites" className="home-account-chip">
-              <b>{favoritesCount}</b> saved {favoritesCount === 1 ? 'property' : 'properties'}
-            </Link>
-            <Link to="/dashboard/searches" className="home-account-chip">
-              <b>{searchCount}</b> saved {searchCount === 1 ? 'search' : 'searches'}
-            </Link>
-            <Link to="/messages" className="home-account-chip">
-              <b>{inboxUnread + chatUnread}</b> unread{' '}
-              {inboxUnread + chatUnread === 1 ? 'message' : 'messages'}
-            </Link>
-          </div>
+          )}
         </div>
-      )}
 
-      <div className="stats">
+        <div className="home-hero-media">
+          <img
+            src="/img/listings/hero-home.jpg"
+            alt="A modern home with large windows and a garden"
+            width="1400"
+            height="933"
+          />
+        </div>
+      </div>
+
+      <div className="home-stats" aria-label="Marketplace overview">
         <div className="stat">
           <b>{format(stats?.listings ?? 0)}</b>
           <span>Live listings</span>
@@ -151,15 +113,22 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="feature-grid">
-        {features.map((f) => (
-          <article className="feature" key={f.title}>
-            <span className="feature-icon">{f.icon}</span>
-            <h3>{f.title}</h3>
-            <p>{f.text}</p>
-          </article>
-        ))}
-      </div>
+      <section className="home-features">
+        <div className="home-section-head">
+          <p className="hero-kicker">Why RealEstate</p>
+          <h2>A calmer way to search, compare and move.</h2>
+        </div>
+
+        <div className="feature-grid">
+          {features.map((feature) => (
+            <article className="feature" key={feature.title}>
+              <span className="feature-icon">{feature.icon}</span>
+              <h3>{feature.title}</h3>
+              <p>{feature.text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
     </section>
   );
 }

@@ -87,7 +87,11 @@ export default function Register() {
           <label className={form.role === 'user' ? 'role active' : 'role'}>
             <input type="radio" name="role" value="user" checked={form.role === 'user'} onChange={onChange} />
             <span className="role-icon" aria-hidden="true">
-              🏠
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 10.5 12 3l9 7.5" />
+                <path d="M5 9.5V21h14V9.5" />
+                <path d="M9.5 21v-6h5v6" />
+              </svg>
             </span>
             <span className="role-copy">
               <strong>Buy or rent</strong>
@@ -97,7 +101,12 @@ export default function Register() {
           <label className={form.role === 'agent' ? 'role active' : 'role'}>
             <input type="radio" name="role" value="agent" checked={form.role === 'agent'} onChange={onChange} />
             <span className="role-icon" aria-hidden="true">
-              🔑
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="8" cy="15" r="4" />
+                <path d="m11 12 9-9" />
+                <path d="m17 6 2 2" />
+                <path d="m14 9 2 2" />
+              </svg>
             </span>
             <span className="role-copy">
               <strong>List properties</strong>

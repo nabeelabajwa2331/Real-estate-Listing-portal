@@ -122,7 +122,6 @@ export default function Profile() {
     <section className="profile-page">
       <header className="page-head profile-head">
         <div>
-          <span className="eyebrow">Account</span>
           <h1>My profile</h1>
           <p className="muted">Manage your photo, contact details and password.</p>
         </div>

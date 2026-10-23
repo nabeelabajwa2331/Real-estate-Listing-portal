@@ -15,6 +15,12 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  // The dashboard sidebar already owns account navigation and sign out, so the
+  // header keeps only the brand and the primary browse link on those screens.
+  const onDashboard = location.pathname.startsWith('/dashboard');
+  const isAuthRoute =
+    ['/login', '/register', '/forgot-password'].includes(location.pathname) ||
+    location.pathname.startsWith('/reset-password');
 
   // Close the mobile menu whenever the route changes.
   useEffect(() => {
@@ -30,6 +36,10 @@ export default function Navbar() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [menuOpen]);
+
+  // Auth screens carry their own brand header, so the global navigation would
+  // only repeat the sign-in and registration actions.
+  if (isAuthRoute) return null;
 
   const handleLogout = async () => {
     setMenuOpen(false);
@@ -66,21 +76,25 @@ export default function Navbar() {
           {user ? (
             <>
               <NavLink to="/listings">Browse</NavLink>
-              <NavLink to={homeForRole(user.role)}>{dashboardLabel[user.role]}</NavLink>
-              <NavLink to="/dashboard/favorites">Saved</NavLink>
-              <NavLink to="/messages" className="nav-inbox">
-                Messages
-                {messagesUnread > 0 && <span className="nav-badge">{messagesUnread}</span>}
-              </NavLink>
-              <NavLink to="/profile" className="nav-user">
-                <Avatar user={user} size={24} />
-                {user.name}
-              </NavLink>
-              <div className="nav-actions">
-                <button type="button" className="btn btn-ghost" onClick={handleLogout}>
-                  Sign out
-                </button>
-              </div>
+              {!onDashboard && (
+                <>
+                  <NavLink to={homeForRole(user.role)}>{dashboardLabel[user.role]}</NavLink>
+                  <NavLink to="/dashboard/favorites">Saved</NavLink>
+                  <NavLink to="/messages" className="nav-inbox">
+                    Messages
+                    {messagesUnread > 0 && <span className="nav-badge">{messagesUnread}</span>}
+                  </NavLink>
+                  <NavLink to="/profile" className="nav-user">
+                    <Avatar user={user} size={24} />
+                    {user.name}
+                  </NavLink>
+                  <div className="nav-actions">
+                    <button type="button" className="btn btn-ghost" onClick={handleLogout}>
+                      Sign out
+                    </button>
+                  </div>
+                </>
+              )}
             </>
           ) : (
             <>

@@ -73,6 +73,9 @@ export default function Listings() {
   const [page, setPage] = useState(initial.page);
   const [bounds, setBounds] = useState(initial.bounds);
   const [autoSearch, setAutoSearch] = useState(true);
+  const [showMore, setShowMore] = useState(
+    Boolean(initial.filters.minArea || initial.filters.maxArea || initial.filters.bedrooms)
+  );
 
   const [listings, setListings] = useState([]);
   const [meta, setMeta] = useState({ page: 1, pages: 1, total: 0 });
@@ -180,6 +183,7 @@ export default function Listings() {
     setFilters(emptyFilters);
     setSort('newest');
     setPage(1);
+    setShowMore(false);
   };
 
   const goToPage = (next) => {
@@ -221,11 +225,11 @@ export default function Listings() {
       </header>
 
       <form className="filters card" onSubmit={onSubmit}>
-        <label>
+        <label className="filter-field filter-city">
           City
           <input name="city" value={form.city} onChange={onChange} placeholder="Any city" />
         </label>
-        <label>
+        <label className="filter-field filter-type">
           Listing type
           <select name="listingType" value={form.listingType} onChange={onChange}>
             <option value="">Any</option>
@@ -233,7 +237,7 @@ export default function Listings() {
             <option value="rent">For rent</option>
           </select>
         </label>
-        <label>
+        <label className="filter-field filter-property">
           Property type
           <select name="propertyType" value={form.propertyType} onChange={onChange}>
             <option value="">Any</option>
@@ -244,25 +248,13 @@ export default function Listings() {
             <option value="room">Room</option>
           </select>
         </label>
-        <label>
+        <label className="filter-field filter-price">
           Min price
           <input type="number" name="minPrice" value={form.minPrice} onChange={onChange} min="0" placeholder="0" />
         </label>
-        <label>
+        <label className="filter-field filter-price">
           Max price
           <input type="number" name="maxPrice" value={form.maxPrice} onChange={onChange} min="0" placeholder="Any" />
-        </label>
-        <label>
-          Min area (sqft)
-          <input type="number" name="minArea" value={form.minArea} onChange={onChange} min="0" placeholder="0" />
-        </label>
-        <label>
-          Max area (sqft)
-          <input type="number" name="maxArea" value={form.maxArea} onChange={onChange} min="0" placeholder="Any" />
-        </label>
-        <label>
-          Bedrooms (min)
-          <input type="number" name="bedrooms" value={form.bedrooms} onChange={onChange} min="0" placeholder="Any" />
         </label>
 
         <div className="filter-actions">
@@ -270,7 +262,32 @@ export default function Listings() {
           <button type="button" className="btn btn-ghost" onClick={resetFilters}>
             Clear
           </button>
+          <button
+            type="button"
+            className="btn btn-ghost filter-toggle"
+            onClick={() => setShowMore((open) => !open)}
+            aria-expanded={showMore}
+          >
+            {showMore ? 'Fewer filters' : 'More filters'}
+          </button>
         </div>
+
+        {showMore && (
+          <>
+            <label className="filter-field filter-area">
+              Min area (sqft)
+              <input type="number" name="minArea" value={form.minArea} onChange={onChange} min="0" placeholder="0" />
+            </label>
+            <label className="filter-field filter-area">
+              Max area (sqft)
+              <input type="number" name="maxArea" value={form.maxArea} onChange={onChange} min="0" placeholder="Any" />
+            </label>
+            <label className="filter-field filter-bedrooms">
+              Bedrooms (min)
+              <input type="number" name="bedrooms" value={form.bedrooms} onChange={onChange} min="0" placeholder="Any" />
+            </label>
+          </>
+        )}
       </form>
 
       <div className="search-toolbar">
@@ -278,8 +295,11 @@ export default function Listings() {
           {meta.total} {meta.total === 1 ? 'result' : 'results'}
         </span>
         <div className="toolbar-actions">
-          <button type="button" className="btn btn-sm" onClick={saveSearch}>
-            ★ Save search
+          <button type="button" className="btn btn-sm save-search-btn" onClick={saveSearch}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z" />
+            </svg>
+            Save search
           </button>
           <label className="sort-select">
             Sort

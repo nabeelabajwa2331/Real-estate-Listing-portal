@@ -466,7 +466,9 @@ export default function Messages() {
           ) : (
             <div className="msg-empty">
               <span className="msg-empty-icon" aria-hidden="true">
-                💬
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-4.6A8.4 8.4 0 0 1 4 11.5a8.4 8.4 0 0 1 8.5-8.4 8.5 8.5 0 0 1 8.5 8.4z" />
+                </svg>
               </span>
               <h2>Your messages</h2>
               <p className="muted">

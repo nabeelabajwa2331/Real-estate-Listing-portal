@@ -14,7 +14,7 @@ export default function AuthShell({
   title,
   subtitle,
   asideTitle = 'Find a place that feels like home.',
-  asideText = 'Verified listings, trusted agents and a simple way to move — all in one place.',
+  asideText = 'Verified listings, local agents and a simple way to move — all in one place.',
   action,
   footer,
   children,
@@ -39,7 +39,9 @@ export default function AuthShell({
               {points.map(([pointTitle, pointText]) => (
                 <li key={pointTitle}>
                   <span className="auth-point-check" aria-hidden="true">
-                    ✓
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m4 12 5 5L20 6" />
+                    </svg>
                   </span>
                   <div>
                     <strong>{pointTitle}</strong>
@@ -50,7 +52,7 @@ export default function AuthShell({
             </ul>
           </div>
 
-          <p className="auth-aside-foot">Pakistan-wide listings · Trusted agents · No hidden fees</p>
+          <p className="auth-aside-foot">Pakistan-wide listings · Local agents · Direct messaging</p>
         </aside>
 
         <div className="auth-panel">
