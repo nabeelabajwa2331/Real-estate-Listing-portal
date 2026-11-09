@@ -5,7 +5,9 @@
 FROM node:20-alpine AS client
 WORKDIR /app/client
 COPY client/package.json client/package-lock.json ./
-RUN npm ci
+# Install devDependencies too (Vite is a devDependency). This keeps the build
+# working even when the platform injects NODE_ENV=production at build time.
+RUN npm ci --include=dev
 COPY client/ ./
 
 # Optional map tiles at build time (client/.env is not copied into the image).
