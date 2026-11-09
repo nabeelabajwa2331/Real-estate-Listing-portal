@@ -215,6 +215,7 @@ Copy `server/.env.example` to `server/.env`. The most important values:
 | `MONGO_URI` | MongoDB connection string |
 | `JWT_SECRET` | Secret for signing auth tokens |
 | `CLIENT_URL` | Public URL of the app (CORS + links in emails) |
+| `GOOGLE_CLIENT_ID` | OAuth client ID for "Continue with Google" |
 | `COOKIE_SAMESITE` | `lax` for same-site, `none` for cross-site HTTPS |
 | `REQUIRE_EMAIL_VERIFICATION` | `true` in production, `false` to skip the email step |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `EMAIL_FROM` | Outgoing email |
@@ -222,7 +223,18 @@ Copy `server/.env.example` to `server/.env`. The most important values:
 | `GEOCODE_USER_AGENT` | User-Agent sent to Nominatim (their policy requires one) |
 
 Optional client settings live in `client/.env` (`VITE_MAPTILER_KEY`,
-`VITE_MAP_STYLE`).
+`VITE_MAP_STYLE`, `VITE_GOOGLE_CLIENT_ID`). `VITE_GOOGLE_CLIENT_ID` must match
+the server's `GOOGLE_CLIENT_ID`.
+
+### Google sign-in
+
+1. Create an **OAuth 2.0 Client ID → Web application** in the
+   [Google Cloud console](https://console.cloud.google.com/apis/credentials).
+2. Add your origins under **Authorised JavaScript origins**
+   (`http://localhost:5173`, plus your production URL).
+3. Set `GOOGLE_CLIENT_ID` on the server and `VITE_GOOGLE_CLIENT_ID` on the client
+   to the same value, then restart/rebuild. The "Continue with Google" button is
+   shown on both the sign-in and registration pages.
 
 ---
 
@@ -493,7 +505,8 @@ API requests so the browser only ever talks to the Vercel origin.
    - **Build Command:** `npm run build`
    - **Output Directory:** `dist`
    - Environment variables: `VITE_MAPTILER_KEY` / `VITE_MAP_STYLE` (optional,
-     for styled map tiles). Leave `VITE_API_URL` unset so requests stay relative.
+     for styled map tiles) and `VITE_GOOGLE_CLIENT_ID` (for Google sign-in).
+     Leave `VITE_API_URL` unset so requests stay relative.
 5. Redeploy the API so the new CORS settings apply.
 
 `client/vercel.json` proxies `/api`, `/uploads` and `/socket.io` to the API host

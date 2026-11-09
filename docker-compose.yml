@@ -10,6 +10,7 @@ services:
       args:
         VITE_MAPTILER_KEY: ${VITE_MAPTILER_KEY:-}
         VITE_MAP_STYLE: ${VITE_MAP_STYLE:-streets-v2}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
     image: real-estate-app
     ports:
       - "5000:5000"

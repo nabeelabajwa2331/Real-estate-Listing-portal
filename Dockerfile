@@ -11,8 +11,10 @@ COPY client/ ./
 # Optional map tiles at build time (client/.env is not copied into the image).
 ARG VITE_MAPTILER_KEY=""
 ARG VITE_MAP_STYLE="streets-v2"
+ARG VITE_GOOGLE_CLIENT_ID=""
 ENV VITE_MAPTILER_KEY=$VITE_MAPTILER_KEY
 ENV VITE_MAP_STYLE=$VITE_MAP_STYLE
+ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 RUN npm run build
 
 # ---- Stage 2: runtime ----
