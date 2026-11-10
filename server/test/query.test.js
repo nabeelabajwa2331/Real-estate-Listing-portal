@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { escapeRegex, cleanSearchParams, ALLOWED_SEARCH_KEYS } from '../utils/query.js';
+import { escapeRegex, cleanSearchParams, ALLOWED_SEARCH_KEYS, sameSearchParams } from '../utils/query.js';
 
 test('escapeRegex neutralises regex metacharacters', () => {
   assert.equal(escapeRegex('a.b*c'), 'a\\.b\\*c');
@@ -24,4 +24,15 @@ test('ALLOWED_SEARCH_KEYS includes sort and map bounds', () => {
   for (const key of ['sort', 'north', 'south', 'east', 'west']) {
     assert.ok(ALLOWED_SEARCH_KEYS.includes(key), `missing ${key}`);
   }
+});
+
+test('sameSearchParams matches regardless of key order and value type', () => {
+  assert.equal(sameSearchParams({ city: 'Lahore', bedrooms: '3' }, { bedrooms: 3, city: 'Lahore' }), true);
+  assert.equal(sameSearchParams({}, {}), true);
+});
+
+test('sameSearchParams detects different criteria', () => {
+  assert.equal(sameSearchParams({ city: 'Lahore' }, { city: 'Karachi' }), false);
+  assert.equal(sameSearchParams({ city: 'Lahore' }, { city: 'Lahore', bedrooms: '2' }), false);
+  assert.equal(sameSearchParams({ minPrice: '10' }, { minPrice: '100' }), false);
 });

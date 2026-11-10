@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import api from '../../api/axios.js';
+import api, { errorMessage } from '../../api/axios.js';
 import ListingCard from '../../components/ListingCard.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useFavorites } from '../../context/FavoritesContext.jsx';
+import { useSavedSearches } from '../../context/SavedSearchesContext.jsx';
 import { searchSummary, searchQueryString } from '../../utils/search.js';
 
 const iconProps = {
@@ -45,28 +46,33 @@ const icons = {
 
 export default function Overview() {
   const { user } = useAuth();
-  const { ids } = useFavorites();
+  const {
+    items: favorites,
+    count: favoriteCount,
+    ids,
+    loaded: favoritesLoaded,
+    error: favoritesError,
+    refresh: refreshFavorites,
+  } = useFavorites();
+  const {
+    searches,
+    count: searchCount,
+    loaded: searchesLoaded,
+    error: searchesError,
+    refresh: refreshSearches,
+  } = useSavedSearches();
   const navigate = useNavigate();
 
-  const [favorites, setFavorites] = useState([]);
-  const [searches, setSearches] = useState([]);
   const [recommended, setRecommended] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     let active = true;
-    Promise.all([
-      api.get('/favorites'),
-      api.get('/saved-searches'),
-      api.get('/listings', { params: { limit: 8, sort: 'newest' } }),
-    ])
-      .then(([favRes, searchRes, latestRes]) => {
-        if (!active) return;
-        setFavorites(favRes.data.listings);
-        setSearches(searchRes.data.searches);
-        setRecommended(latestRes.data.listings);
-      })
-      .catch(() => {})
+    api
+      .get('/listings', { params: { limit: 8, sort: 'newest' } })
+      .then((res) => active && setRecommended(res.data.listings))
+      .catch((err) => active && setError(errorMessage(err)))
       .finally(() => active && setLoading(false));
     return () => {
       active = false;
@@ -100,7 +106,9 @@ export default function Overview() {
         <Link to="/dashboard/saved" className="card dash-metric">
           <span className="dash-metric-icon">{icons.heart}</span>
           <span className="dash-metric-copy">
-            <span className="dash-metric-value">{favorites.length}</span>
+            <span className="dash-metric-value" aria-live="polite">
+              {favoritesLoaded ? favoriteCount : '—'}
+            </span>
             <span className="dash-metric-label">Saved items</span>
           </span>
         </Link>
@@ -108,7 +116,9 @@ export default function Overview() {
         <Link to="/dashboard/searches" className="card dash-metric">
           <span className="dash-metric-icon">{icons.search}</span>
           <span className="dash-metric-copy">
-            <span className="dash-metric-value">{searches.length}</span>
+            <span className="dash-metric-value" aria-live="polite">
+              {searchesLoaded ? searchCount : '—'}
+            </span>
             <span className="dash-metric-label">Saved searches</span>
           </span>
         </Link>
@@ -139,12 +149,23 @@ export default function Overview() {
             )}
           </div>
 
-          {loading ? (
+          {favoritesError && (
+            <div className="dash-inline-error">
+              <p className="alert alert-error">{favoritesError}</p>
+              <button type="button" className="btn btn-sm" onClick={refreshFavorites}>
+                Try again
+              </button>
+            </div>
+          )}
+
+          {!favoritesLoaded ? (
             <p className="muted dash-loading">Loading saved items...</p>
           ) : favorites.length === 0 ? (
-            <p className="muted small dash-inline-empty">
-              Save a property from <Link to="/listings">Browse</Link> to keep it here for later.
-            </p>
+            !favoritesError && (
+              <p className="muted small dash-inline-empty">
+                Save a property from <Link to="/listings">Browse</Link> to keep it here for later.
+              </p>
+            )
           ) : (
             <div className="dash-card-grid">
               {favorites.slice(0, 4).map((listing) => (
@@ -168,12 +189,23 @@ export default function Overview() {
               )}
             </div>
 
-            {loading ? (
+            {searchesError && (
+              <div className="dash-inline-error">
+                <p className="alert alert-error">{searchesError}</p>
+                <button type="button" className="btn btn-sm" onClick={refreshSearches}>
+                  Try again
+                </button>
+              </div>
+            )}
+
+            {!searchesLoaded ? (
               <p className="muted dash-loading">Loading saved searches...</p>
             ) : searches.length === 0 ? (
-              <p className="muted small dash-inline-empty">
-                Save a search on <Link to="/listings">Browse</Link> to re-run it later.
-              </p>
+              !searchesError && (
+                <p className="muted small dash-inline-empty">
+                  Save a search on <Link to="/listings">Browse</Link> to re-run it later.
+                </p>
+              )
             ) : (
               <ul className="dash-search-list">
                 {searches.slice(0, 3).map((search) => (
@@ -204,7 +236,9 @@ export default function Overview() {
           </Link>
         </div>
 
-        {loading ? (
+        {error ? (
+          <p className="alert alert-error">{error}</p>
+        ) : loading ? (
           <p className="muted dash-loading">Loading recommendations...</p>
         ) : suggestions.length === 0 ? (
           <p className="muted small">No new recommendations right now — check back soon.</p>

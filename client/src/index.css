@@ -1670,6 +1670,14 @@ main.container {
   background: var(--accent-soft);
 }
 
+/* Inline feedback when a save/unsave request fails and is rolled back. */
+.fav-error {
+  margin: 6px 0 0;
+  color: #a83232;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
 /* Browse toolbar */
 .toolbar-actions {
   display: flex;

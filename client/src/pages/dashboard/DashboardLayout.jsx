@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import Avatar from '../../components/Avatar.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useFavorites } from '../../context/FavoritesContext.jsx';
+import { useSavedSearches } from '../../context/SavedSearchesContext.jsx';
 import { useInquiries } from '../../context/InquiryContext.jsx';
 import { useChat } from '../../context/ChatContext.jsx';
 
@@ -90,6 +91,7 @@ const icons = {
 export default function DashboardLayout() {
   const { user, logout } = useAuth();
   const { count } = useFavorites();
+  const { count: searchCount } = useSavedSearches();
   const { unread: inquiryUnread } = useInquiries();
   const { unread: chatUnread } = useChat();
   const navigate = useNavigate();
@@ -168,6 +170,7 @@ export default function DashboardLayout() {
           <NavLink to="/dashboard/searches" className="dash-nav-link">
             <span className="dash-nav-icon">{icons.search}</span>
             <span className="dash-nav-text">Saved searches</span>
+            {searchCount > 0 && <span className="dash-nav-count">{searchCount}</span>}
           </NavLink>
           <NavLink to="/messages" className="dash-nav-link">
             <span className="dash-nav-icon">{icons.message}</span>

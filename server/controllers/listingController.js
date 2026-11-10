@@ -1,4 +1,5 @@
 import Listing from '../models/Listing.js';
+import User from '../models/User.js';
 import { uploadImages, deleteImage } from '../utils/upload.js';
 import { escapeRegex } from '../utils/query.js';
 
@@ -235,5 +236,9 @@ export const deleteListing = async (req, res) => {
 
   await Promise.all(listing.images.map(deleteImage));
   await listing.deleteOne();
+
+  // A deleted listing must not keep inflating anyone's saved-items count.
+  await User.updateMany({ favorites: listing._id }, { $pull: { favorites: listing._id } });
+
   res.json({ message: 'Listing deleted' });
 };

@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { SocketProvider } from './context/SocketContext.jsx';
 import { FavoritesProvider } from './context/FavoritesContext.jsx';
+import { SavedSearchesProvider } from './context/SavedSearchesContext.jsx';
 import { InquiryProvider } from './context/InquiryContext.jsx';
 import { ChatProvider } from './context/ChatContext.jsx';
 import App from './App.jsx';
@@ -20,11 +21,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <AuthProvider>
         <SocketProvider>
           <FavoritesProvider>
-            <InquiryProvider>
-              <ChatProvider>
-                <App />
-              </ChatProvider>
-            </InquiryProvider>
+            <SavedSearchesProvider>
+              <InquiryProvider>
+                <ChatProvider>
+                  <App />
+                </ChatProvider>
+              </InquiryProvider>
+            </SavedSearchesProvider>
           </FavoritesProvider>
         </SocketProvider>
       </AuthProvider>

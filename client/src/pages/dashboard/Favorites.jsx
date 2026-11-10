@@ -1,6 +1,4 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import api, { errorMessage } from '../../api/axios.js';
 import ListingCard from '../../components/ListingCard.jsx';
 import { useFavorites } from '../../context/FavoritesContext.jsx';
 
@@ -10,26 +8,10 @@ const heartIcon = (
   </svg>
 );
 
+// Saved items are read from the shared favorites store, so a listing saved or
+// removed anywhere in the app appears here (and the counts) immediately.
 export default function Favorites() {
-  const { ids } = useFavorites();
-  const [listings, setListings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    let active = true;
-    api
-      .get('/favorites')
-      .then((res) => active && setListings(res.data.listings))
-      .catch((err) => active && setError(errorMessage(err)))
-      .finally(() => active && setLoading(false));
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  // Reflect un-saving immediately by cross-checking the favorites context.
-  const visible = listings.filter((listing) => ids.has(listing._id));
+  const { items, count, loaded, error, refresh } = useFavorites();
 
   return (
     <div className="dash-page">
@@ -38,7 +20,9 @@ export default function Favorites() {
           <p className="dash-eyebrow">Saved properties</p>
           <h1>Saved items</h1>
           <p className="muted small" aria-live="polite">
-            {visible.length} saved {visible.length === 1 ? 'property' : 'properties'}
+            {loaded
+              ? `${count} saved ${count === 1 ? 'property' : 'properties'}`
+              : 'Loading saved items...'}
           </p>
         </div>
         <div className="dash-page-actions">
@@ -48,21 +32,31 @@ export default function Favorites() {
         </div>
       </header>
 
-      {error && <p className="alert alert-error">{error}</p>}
+      {error && (
+        <div className="dash-inline-error">
+          <p className="alert alert-error">{error}</p>
+          <button type="button" className="btn btn-sm" onClick={refresh}>
+            Try again
+          </button>
+        </div>
+      )}
 
-      {loading ? (
+      {!loaded ? (
         <p className="muted dash-loading">Loading saved items...</p>
-      ) : visible.length === 0 ? (
+      ) : items.length === 0 ? (
         !error && (
           <div className="card dash-empty-state">
             <span className="dash-empty-icon">{heartIcon}</span>
             <h2>No saved items yet</h2>
             <p className="muted">Tap the heart on any listing to save it here.</p>
+            <Link to="/listings" className="btn btn-primary">
+              Browse listings
+            </Link>
           </div>
         )
       ) : (
         <div className="dash-card-grid">
-          {visible.map((listing) => (
+          {items.map((listing) => (
             <ListingCard key={listing._id} listing={listing} />
           ))}
         </div>

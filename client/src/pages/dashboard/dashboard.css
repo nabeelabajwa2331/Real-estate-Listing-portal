@@ -670,6 +670,18 @@ a.dash-metric:hover {
   max-width: 48ch;
 }
 
+/* Error + retry inside a dashboard panel. */
+.dash-inline-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.dash-inline-error .alert {
+  margin: 0;
+}
+
 .dash-inline-empty a {
   color: var(--primary);
   font-weight: 700;

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFavorites } from '../context/FavoritesContext.jsx';
@@ -21,16 +22,19 @@ export function formatPrice(listing) {
 export default function ListingCard({ listing }) {
   const { user } = useAuth();
   const favorites = useFavorites();
+  const [toggleError, setToggleError] = useState(false);
   const saved = Boolean(user && favorites?.isFavorite(listing._id));
 
   const cover = assetUrl(listing.images?.[0]?.url);
   const city = listing.address?.city;
 
-  const onToggleFavorite = (e) => {
+  const onToggleFavorite = async (e) => {
     // The whole card is a link, so stop the click from navigating.
     e.preventDefault();
     e.stopPropagation();
-    favorites.toggle(listing._id);
+    setToggleError(false);
+    const ok = await favorites.toggle(listing._id, listing);
+    if (!ok) setToggleError(true);
   };
 
   return (
@@ -77,6 +81,12 @@ export default function ListingCard({ listing }) {
         </div>
 
         <p className="listing-card-price">{formatPrice(listing)}</p>
+
+        {toggleError && (
+          <p className="fav-error" role="alert">
+            Couldn&apos;t update saved items. Please try again.
+          </p>
+        )}
       </div>
     </Link>
   );

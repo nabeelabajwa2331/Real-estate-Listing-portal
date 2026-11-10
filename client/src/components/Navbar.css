@@ -159,6 +159,16 @@
 }
 
 /* ---------- Account area ---------- */
+/* Stable placeholder while /auth/me is in flight. */
+.app-account-skeleton {
+  display: inline-block;
+  width: 148px;
+  height: 38px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  opacity: 0.65;
+}
+
 .app-account-chip {
   display: inline-flex;
   align-items: center;

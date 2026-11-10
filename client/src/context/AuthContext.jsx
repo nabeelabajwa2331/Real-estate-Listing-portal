@@ -16,6 +16,22 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, []);
 
+  // An expired or revoked session on any protected endpoint signs the browser
+  // out locally instead of leaving the UI showing a logged-in shell whose
+  // requests all fail. Auth endpoints are excluded because a failed sign-in is
+  // not an expired session.
+  useEffect(() => {
+    const id = api.interceptors.response.use(
+      (response) => response,
+      (err) => {
+        const url = err?.config?.url || '';
+        if (err?.response?.status === 401 && !url.startsWith('/auth/')) setUser(null);
+        return Promise.reject(err);
+      }
+    );
+    return () => api.interceptors.response.eject(id);
+  }, []);
+
   const login = async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password });
     setUser(data.user);
@@ -41,8 +57,14 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
-    await api.post('/auth/logout');
-    setUser(null);
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      // Even if the server is unreachable, drop the local session so another
+      // account can sign in without inheriting this user's data.
+    } finally {
+      setUser(null);
+    }
   };
 
   const updateProfile = async (form) => {

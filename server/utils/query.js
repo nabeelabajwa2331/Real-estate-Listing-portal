@@ -31,3 +31,12 @@ export const cleanSearchParams = (input = {}) => {
   }
   return out;
 };
+
+// True when two cleaned param objects describe the same search. Used to avoid
+// storing duplicate saved searches when the button is pressed twice.
+export const sameSearchParams = (a = {}, b = {}) => {
+  const keysA = Object.keys(a).sort();
+  const keysB = Object.keys(b).sort();
+  if (keysA.length !== keysB.length) return false;
+  return keysA.every((key, index) => key === keysB[index] && String(a[key]) === String(b[key]));
+};

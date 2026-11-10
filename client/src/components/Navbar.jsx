@@ -68,7 +68,7 @@ const dashboardLink = {
 };
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
   const { count: savedCount } = useFavorites();
   const { unread } = useInquiries();
   const { unread: chatUnread } = useChat();
@@ -155,14 +155,16 @@ export default function Navbar() {
               Browse homes
             </NavLink>
 
-            {user && primary && (
+            {/* Account-specific links wait for the session check, so a signed-in
+                user never sees "Sign in" flash before their own controls. */}
+            {!loading && user && primary && (
               <NavLink to={primary.to} className="app-nav-link" onClick={() => setMenuOpen(false)}>
                 <span className="app-nav-icon">{primary.icon}</span>
                 {primary.label}
               </NavLink>
             )}
 
-            {user && (
+            {!loading && user && (
               <NavLink
                 to="/dashboard/saved"
                 className="app-nav-link"
@@ -174,7 +176,7 @@ export default function Navbar() {
               </NavLink>
             )}
 
-            {user && (
+            {!loading && user && (
               <NavLink to="/messages" className="app-nav-link" onClick={() => setMenuOpen(false)}>
                 <span className="app-nav-icon">{icons.message}</span>
                 Messages
@@ -182,7 +184,7 @@ export default function Navbar() {
               </NavLink>
             )}
 
-            {user?.role === 'agent' && (
+            {!loading && user?.role === 'agent' && (
               <NavLink to="/dashboard" className="app-nav-link" onClick={() => setMenuOpen(false)}>
                 Dashboard
               </NavLink>
@@ -190,7 +192,9 @@ export default function Navbar() {
           </div>
 
           <div className="app-nav-account">
-            {user ? (
+            {loading ? (
+              <span className="app-account-skeleton" aria-hidden="true" />
+            ) : user ? (
               <>
                 <Link
                   to="/profile"

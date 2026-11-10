@@ -20,6 +20,7 @@ export default function ListingDetail() {
   const [inquiryBusy, setInquiryBusy] = useState(false);
   const [inquiryNotice, setInquiryNotice] = useState('');
   const [inquiryError, setInquiryError] = useState('');
+  const [favoriteError, setFavoriteError] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -91,9 +92,11 @@ export default function ListingDetail() {
   const agent = listing.agent;
   const isOwner = user && (user.role === 'admin' || agent?._id === user.id);
   const saved = Boolean(user && favorites?.isFavorite(listing._id));
+  const demoBuyer = Boolean(user?.isDemoBuyer);
 
   const sendInquiry = async (e) => {
     e.preventDefault();
+    if (demoBuyer) return;
     setInquiryBusy(true);
     setInquiryError('');
     setInquiryNotice('');
@@ -108,7 +111,14 @@ export default function ListingDetail() {
     }
   };
 
+  const onToggleFavorite = async () => {
+    setFavoriteError('');
+    const ok = await favorites.toggle(listing._id, listing);
+    if (!ok) setFavoriteError('Could not update saved items. Please try again.');
+  };
+
   const startChat = async () => {
+    if (demoBuyer) return;
     setInquiryError('');
     try {
       const { data } = await api.post('/chat/conversations', { userId: agent._id });
@@ -149,7 +159,7 @@ export default function ListingDetail() {
               <button
                 type="button"
                 className={saved ? 'btn fav-toggle active' : 'btn fav-toggle'}
-                onClick={() => favorites.toggle(listing._id)}
+                onClick={onToggleFavorite}
                 aria-pressed={saved}
               >
                 <svg
@@ -174,6 +184,11 @@ export default function ListingDetail() {
               </Link>
             )}
           </div>
+          {favoriteError && (
+            <p className="fav-error" role="alert">
+              {favoriteError}
+            </p>
+          )}
         </div>
       </div>
 
@@ -229,17 +244,17 @@ export default function ListingDetail() {
             <h2>Listed by</h2>
             <p className="agent-name">{agent?.name || 'Agent'}</p>
 
-            {agent?.phone && (
+            {!demoBuyer && agent?.phone && (
               <a className="btn btn-primary" href={`tel:${agent.phone}`}>
                 Call {agent.phone}
               </a>
             )}
-            {agent?.email && (
+            {!demoBuyer && agent?.email && (
               <a className="btn" href={`mailto:${agent.email}`}>
                 Email agent
               </a>
             )}
-            {!isOwner && (
+            {!isOwner && !demoBuyer && (
               <button type="button" className="btn" onClick={startChat}>
                 Chat with agent
               </button>
@@ -250,23 +265,30 @@ export default function ListingDetail() {
             </p>
 
             {user && !isOwner && (
-              <form className="inquiry-form" onSubmit={sendInquiry}>
-                <label>
-                  Message the agent
-                  <textarea
-                    rows={4}
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Hi, I'm interested in this property. Is it still available?"
-                    maxLength={2000}
-                  />
-                </label>
-                {inquiryNotice && <p className="alert alert-success">{inquiryNotice}</p>}
-                {inquiryError && <p className="alert alert-error">{inquiryError}</p>}
-                <button className="btn btn-primary" disabled={inquiryBusy || !message.trim()}>
-                  {inquiryBusy ? 'Sending...' : 'Send inquiry'}
-                </button>
-              </form>
+              demoBuyer ? (
+                <p className="alert alert-info">
+                  The sample Google buyer is for browsing only. Contacting agents, sending inquiries
+                  and chatting are disabled.
+                </p>
+              ) : (
+                <form className="inquiry-form" onSubmit={sendInquiry}>
+                  <label>
+                    Message the agent
+                    <textarea
+                      rows={4}
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder="Hi, I'm interested in this property. Is it still available?"
+                      maxLength={2000}
+                    />
+                  </label>
+                  {inquiryNotice && <p className="alert alert-success">{inquiryNotice}</p>}
+                  {inquiryError && <p className="alert alert-error">{inquiryError}</p>}
+                  <button className="btn btn-primary" disabled={inquiryBusy || !message.trim()}>
+                    {inquiryBusy ? 'Sending...' : 'Send inquiry'}
+                  </button>
+                </form>
+              )
             )}
           </section>
         </aside>

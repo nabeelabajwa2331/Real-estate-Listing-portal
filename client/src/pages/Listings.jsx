@@ -4,6 +4,7 @@ import api, { errorMessage } from '../api/axios.js';
 import ListingCard from '../components/ListingCard.jsx';
 import ListingMap from '../components/ListingMap.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useSavedSearches } from '../context/SavedSearchesContext.jsx';
 
 const emptyFilters = {
   city: '',
@@ -63,6 +64,7 @@ const LIMIT = 8;
 
 export default function Listings() {
   const { user } = useAuth();
+  const { create: createSearch, saving: savingSearch } = useSavedSearches();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const initial = useRef(readInitialState(searchParams)).current;
@@ -192,6 +194,7 @@ export default function Listings() {
   };
 
   const saveSearch = async () => {
+    if (savingSearch) return; // ignore double clicks while a save is in flight
     setError('');
     setNotice('');
     if (!user) {
@@ -206,8 +209,8 @@ export default function Listings() {
     if (!name) return;
 
     try {
-      await api.post('/saved-searches', { name, params: savedParams });
-      setNotice(`Saved "${name.trim()}" to your dashboard.`);
+      const data = await createSearch(name.trim(), savedParams);
+      setNotice(data.message || `Saved "${name.trim()}" to your dashboard.`);
     } catch (err) {
       setError(errorMessage(err));
     }
@@ -295,11 +298,16 @@ export default function Listings() {
           {meta.total} {meta.total === 1 ? 'result' : 'results'}
         </span>
         <div className="toolbar-actions">
-          <button type="button" className="btn btn-sm save-search-btn" onClick={saveSearch}>
+          <button
+            type="button"
+            className="btn btn-sm save-search-btn"
+            onClick={saveSearch}
+            disabled={savingSearch}
+          >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z" />
             </svg>
-            Save search
+            {savingSearch ? 'Saving...' : 'Save search'}
           </button>
           <label className="sort-select">
             Sort

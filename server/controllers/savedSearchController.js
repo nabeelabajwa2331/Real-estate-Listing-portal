@@ -1,5 +1,5 @@
 import SavedSearch from '../models/SavedSearch.js';
-import { cleanSearchParams } from '../utils/query.js';
+import { cleanSearchParams, sameSearchParams } from '../utils/query.js';
 
 // GET /api/saved-searches
 export const getSavedSearches = async (req, res) => {
@@ -9,10 +9,24 @@ export const getSavedSearches = async (req, res) => {
 
 // POST /api/saved-searches  { name, params }
 export const createSavedSearch = async (req, res) => {
+  const name = req.body.name.trim();
+  const params = cleanSearchParams(req.body.params);
+
+  // Pressing "Save search" twice (or re-saving the same criteria) must not
+  // create a second identical record, which would inflate the dashboard count.
+  const existing = await SavedSearch.findOne({ user: req.user._id, name });
+  if (existing && sameSearchParams(existing.params, params)) {
+    return res.status(200).json({
+      search: existing,
+      duplicate: true,
+      message: `"${name}" is already saved`,
+    });
+  }
+
   const search = await SavedSearch.create({
     user: req.user._id,
-    name: req.body.name.trim(),
-    params: cleanSearchParams(req.body.params),
+    name,
+    params,
   });
   res.status(201).json({ search, message: 'Search saved' });
 };

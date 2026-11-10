@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import api, { errorMessage } from '../../api/axios.js';
+import { useSavedSearches } from '../../context/SavedSearchesContext.jsx';
 import { searchSummary, searchQueryString } from '../../utils/search.js';
 
 const searchIcon = (
@@ -12,40 +12,19 @@ const searchIcon = (
 
 export default function SavedSearches() {
   const navigate = useNavigate();
-  const [searches, setSearches] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { searches, count, loaded, error, remove, refresh } = useSavedSearches();
   const [busyId, setBusyId] = useState(null);
-
-  useEffect(() => {
-    let active = true;
-    api
-      .get('/saved-searches')
-      .then((res) => active && setSearches(res.data.searches))
-      .catch((err) => active && setError(errorMessage(err)))
-      .finally(() => active && setLoading(false));
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const run = (search) => {
     const qs = searchQueryString(search.params);
     navigate(qs ? `/listings?${qs}` : '/listings');
   };
 
-  const remove = async (search) => {
+  const onRemove = async (search) => {
     if (!window.confirm(`Delete "${search.name}"?`)) return;
     setBusyId(search._id);
-    setError('');
-    try {
-      await api.delete(`/saved-searches/${search._id}`);
-      setSearches((list) => list.filter((item) => item._id !== search._id));
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setBusyId(null);
-    }
+    await remove(search._id);
+    setBusyId(null);
   };
 
   return (
@@ -54,7 +33,9 @@ export default function SavedSearches() {
         <div>
           <p className="dash-eyebrow">Search library</p>
           <h1>Saved searches</h1>
-          <p className="muted small">Re-run a search to see the latest matches.</p>
+          <p className="muted small" aria-live="polite">
+            {loaded ? `${count} saved ${count === 1 ? 'search' : 'searches'}` : 'Loading saved searches...'}
+          </p>
         </div>
         <div className="dash-page-actions">
           <Link to="/listings" className="btn btn-primary">
@@ -63,9 +44,16 @@ export default function SavedSearches() {
         </div>
       </header>
 
-      {error && <p className="alert alert-error">{error}</p>}
+      {error && (
+        <div className="dash-inline-error">
+          <p className="alert alert-error">{error}</p>
+          <button type="button" className="btn btn-sm" onClick={refresh}>
+            Try again
+          </button>
+        </div>
+      )}
 
-      {loading ? (
+      {!loaded ? (
         <p className="muted dash-loading">Loading saved searches...</p>
       ) : searches.length === 0 ? (
         !error && (
@@ -73,6 +61,9 @@ export default function SavedSearches() {
             <span className="dash-empty-icon">{searchIcon}</span>
             <h2>No saved searches</h2>
             <p className="muted">Use “Save search” on the browse page to keep one here.</p>
+            <Link to="/listings" className="btn btn-primary">
+              Start a search
+            </Link>
           </div>
         )
       ) : (
@@ -95,7 +86,7 @@ export default function SavedSearches() {
                   type="button"
                   className="btn btn-sm btn-danger"
                   disabled={busyId === search._id}
-                  onClick={() => remove(search)}
+                  onClick={() => onRemove(search)}
                 >
                   {busyId === search._id ? 'Deleting...' : 'Delete'}
                 </button>
