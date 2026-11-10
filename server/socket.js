@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import User from './models/User.js';
 
 let io;
+const onlineUsers = new Map();
 
 const parseCookies = (header = '') =>
   Object.fromEntries(
@@ -45,12 +46,23 @@ export function initSocket(server) {
   io.on('connection', (socket) => {
     // Every user gets their own room so messages can be pushed to them.
     socket.join(`user:${socket.userId}`);
+
+    onlineUsers.set(socket.userId, (onlineUsers.get(socket.userId) || 0) + 1);
+    socket.on('disconnect', () => {
+      const remaining = (onlineUsers.get(socket.userId) || 1) - 1;
+      if (remaining > 0) onlineUsers.set(socket.userId, remaining);
+      else onlineUsers.delete(socket.userId);
+    });
   });
 
   return io;
 }
 
 export const getIO = () => io;
+
+export const isUserOnline = (userId) => onlineUsers.has(String(userId));
+
+export const getOnlineCount = () => onlineUsers.size;
 
 // Pushes an event to one user (all of that user's open tabs).
 export const emitToUser = (userId, event, payload) => {

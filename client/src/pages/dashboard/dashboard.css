@@ -670,7 +670,6 @@ a.dash-metric:hover {
   max-width: 48ch;
 }
 
-/* Error + retry inside a dashboard panel. */
 .dash-inline-error {
   display: flex;
   flex-direction: column;
@@ -883,72 +882,6 @@ a.dash-metric:hover {
   text-transform: uppercase;
 }
 
-.admin-stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-  margin-bottom: 18px;
-}
-
-.admin-stat {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  min-height: 88px;
-  padding: 17px 18px;
-}
-
-.admin-stat-icon {
-  display: grid;
-  flex: 0 0 42px;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 11px;
-  line-height: 0;
-}
-
-.admin-stat-icon svg {
-  display: block;
-  margin: auto;
-}
-
-.admin-stat-pending {
-  background: var(--accent-soft);
-  color: var(--primary);
-}
-
-.admin-stat-approved {
-  background: var(--success-bg);
-  color: var(--success-text);
-}
-
-.admin-stat-rejected {
-  background: var(--error-bg);
-  color: var(--error-text);
-}
-
-.admin-stat-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
-
-.admin-stat-copy strong {
-  color: var(--text-strong);
-  font-size: 1.3rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
-}
-
-.admin-stat-copy > span {
-  color: var(--muted);
-  font-size: 0.76rem;
-  font-weight: 600;
-}
-
 .admin-main .admin-panel {
   display: flex;
   flex-direction: column;
@@ -1096,7 +1029,49 @@ a.dash-metric:hover {
   max-width: 46ch;
 }
 
-/* ---------- User management ---------- */
+.admin-users .admin-panel-head {
+  flex-wrap: wrap;
+}
+
+.admin-online-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: var(--success-bg);
+  color: var(--success-text);
+  font-size: 0.76rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.admin-online-dot {
+  flex: 0 0 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.admin-online,
+.admin-offline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.admin-online {
+  color: var(--success-text);
+}
+
+.admin-offline {
+  color: var(--muted-2);
+}
+
 .admin-users .admin-filters {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) auto;
@@ -1174,41 +1149,6 @@ a.dash-metric:hover {
 
 .admin-role {
   text-transform: capitalize;
-}
-
-.admin-verified,
-.admin-unverified {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.admin-verified {
-  color: var(--success-text);
-}
-
-.admin-unverified {
-  color: var(--muted-2);
-}
-
-.admin-check {
-  display: grid;
-  flex: 0 0 16px;
-  place-items: center;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--success-bg);
-  color: var(--success-text);
-  line-height: 0;
-}
-
-.admin-check svg {
-  display: block;
-  margin: auto;
 }
 
 /* ============================================================
@@ -1485,16 +1425,6 @@ a.dash-metric:hover {
     padding: 18px;
   }
 
-  .admin-stats {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .admin-stat {
-    min-height: 74px;
-    padding: 14px 16px;
-  }
-
   .admin-users .admin-filters {
     grid-template-columns: 1fr;
   }
@@ -1587,14 +1517,9 @@ a.dash-metric:hover {
   }
 }
 
-/* ============================================================
-   Green workspace sidebars (member + admin)
-   Both sidebars use the site's primary green with white text so
-   the workspace matches the marketplace branding.
-   ============================================================ */
 .dash-sidebar,
 .admin-sidebar {
-  background: var(--primary);
+  background: var(--primary-dark);
   border-right-color: rgba(255, 255, 255, 0.16);
   color: #ffffff;
 }
@@ -1619,11 +1544,10 @@ a.dash-metric:hover {
   color: #ffffff;
 }
 
-/* Invert the brand tile so it stays visible on the green surface. */
 .dash-brand-mark,
 .admin-brand-mark {
   background: #ffffff;
-  color: var(--primary);
+  color: var(--primary-dark);
 }
 
 .dash-brand-name,
@@ -1667,7 +1591,6 @@ a.dash-metric:hover {
   box-shadow: inset 3px 0 0 #ffffff;
 }
 
-/* Keep keyboard focus visible against the green background. */
 .dash-sidebar .dash-nav-link:focus-visible,
 .admin-sidebar .admin-nav-item:focus-visible,
 .admin-sidebar .admin-side-link:focus-visible,
@@ -1688,7 +1611,7 @@ a.dash-metric:hover {
 .dash-nav-link.active .dash-nav-count,
 .admin-nav-item.active .admin-nav-count {
   background: #ffffff;
-  color: var(--primary);
+  color: var(--primary-dark);
 }
 
 .dash-close,
@@ -1727,7 +1650,6 @@ a.dash-metric:hover {
   color: #ffffff;
 }
 
-/* A soft ring keeps the avatar crisp against the green surface. */
 .dash-profile .avatar,
 .admin-sidebar-user .avatar {
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);

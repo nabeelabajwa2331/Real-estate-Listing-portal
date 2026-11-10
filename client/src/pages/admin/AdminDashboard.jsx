@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import api, { errorMessage } from '../../api/axios.js';
 import { formatPrice, propertyLabel } from '../../components/ListingCard.jsx';
@@ -40,24 +40,6 @@ const icons = {
       <path d="M16 5.5a3 3 0 0 1 0 5.8M17.5 14.2a5.5 5.5 0 0 1 3 4.8" />
     </svg>
   ),
-  clock: (
-    <svg {...iconProps}>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v5l3 2" />
-    </svg>
-  ),
-  checkCircle: (
-    <svg {...iconProps}>
-      <circle cx="12" cy="12" r="9" />
-      <path d="m8 12 2.5 2.5L16 9" />
-    </svg>
-  ),
-  xCircle: (
-    <svg {...iconProps}>
-      <circle cx="12" cy="12" r="9" />
-      <path d="m9 9 6 6M15 9l-6 6" />
-    </svg>
-  ),
   user: (
     <svg {...iconProps}>
       <circle cx="12" cy="8" r="3.5" />
@@ -68,11 +50,6 @@ const icons = {
     <svg {...iconProps}>
       <circle cx="12" cy="12" r="9" />
       <path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18" />
-    </svg>
-  ),
-  check: (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="m4 12 5 5L20 6" />
     </svg>
   ),
   menu: (
@@ -96,21 +73,22 @@ export default function AdminDashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [listingCounts, setListingCounts] = useState(initialCounts);
 
-  // Admin sections are real URLs so refresh, deep links and the browser back
-  // button all work. /admin is the listing approval section.
   const normalizedPath = location.pathname.replace(/\/+$/, '');
   const tab = normalizedPath === '/admin/users' ? 'users' : 'listings';
 
   useEffect(() => {
+    if (tab !== 'users') return undefined;
     let active = true;
     api
       .get('/admin/listings', { params: { status: 'pending' } })
-      .then((res) => active && setListingCounts(res.data.counts))
+      .then((res) => {
+        if (active) setListingCounts(res.data.counts);
+      })
       .catch(() => {});
     return () => {
       active = false;
     };
-  }, []);
+  }, [tab]);
 
   useEffect(() => {
     setMenuOpen(false);
@@ -240,44 +218,14 @@ export default function AdminDashboard() {
               <h1>{tab === 'users' ? 'User management' : 'Admin dashboard'}</h1>
               <p className="muted">
                 {tab === 'users'
-                  ? 'Search accounts, verify roles and control access.'
+                  ? 'Search accounts, activate or deactivate access and see who is online.'
                   : 'Review submitted listings and keep the marketplace accurate.'}
               </p>
-            </div>
-            <div className="dash-page-actions">
-              <Link to="/" className="btn">
-                View marketplace
-              </Link>
             </div>
           </header>
 
           {tab === 'listings' ? (
-            <>
-              <div className="admin-stats" aria-label="Listing statistics">
-                <article className="card admin-stat">
-                  <span className="admin-stat-icon admin-stat-pending">{icons.clock}</span>
-                  <span className="admin-stat-copy">
-                    <strong>{listingCounts.pending}</strong>
-                    <span>Pending review</span>
-                  </span>
-                </article>
-                <article className="card admin-stat">
-                  <span className="admin-stat-icon admin-stat-approved">{icons.checkCircle}</span>
-                  <span className="admin-stat-copy">
-                    <strong>{listingCounts.approved}</strong>
-                    <span>Approved</span>
-                  </span>
-                </article>
-                <article className="card admin-stat">
-                  <span className="admin-stat-icon admin-stat-rejected">{icons.xCircle}</span>
-                  <span className="admin-stat-copy">
-                    <strong>{listingCounts.rejected}</strong>
-                    <span>Rejected</span>
-                  </span>
-                </article>
-              </div>
-              <ApprovalQueue onCountsChange={setListingCounts} />
-            </>
+            <ApprovalQueue onCountsChange={setListingCounts} />
           ) : (
             <UsersPanel />
           )}
@@ -474,32 +422,39 @@ function ApprovalQueue({ onCountsChange }) {
 function UsersPanel() {
   const { user: me } = useAuth();
   const [users, setUsers] = useState([]);
+  const [onlineCount, setOnlineCount] = useState(0);
   const [query, setQuery] = useState('');
   const [role, setRole] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState(null);
+  const paramsRef = useRef({ q: '', role: '' });
 
-  const load = async (params = {}) => {
-    setLoading(true);
+  const load = async (params = paramsRef.current, silent = false) => {
+    if (!silent) setLoading(true);
     setError('');
     try {
       const { data } = await api.get('/admin/users', { params });
       setUsers(data.users);
+      setOnlineCount(data.onlineCount ?? 0);
     } catch (err) {
       setError(errorMessage(err));
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
     load();
+    const timer = setInterval(() => load(paramsRef.current, true), 30000);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const search = (e) => {
     e.preventDefault();
-    load({ q: query, role });
+    paramsRef.current = { q: query, role };
+    load(paramsRef.current);
   };
 
   const toggle = async (u) => {
@@ -508,7 +463,13 @@ function UsersPanel() {
     try {
       const action = u.isActive ? 'deactivate' : 'activate';
       const { data } = await api.patch(`/admin/users/${u.id}/${action}`);
-      setUsers((list) => list.map((item) => (item.id === u.id ? data.user : item)));
+      setUsers((list) =>
+        list.map((item) =>
+          item.id === u.id
+            ? { ...data.user, isOnline: action === 'deactivate' ? false : item.isOnline }
+            : item
+        )
+      );
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -523,6 +484,10 @@ function UsersPanel() {
           <h2>User accounts</h2>
           <p className="muted small">Search accounts and control access.</p>
         </div>
+        <span className="admin-online-badge">
+          <span className="admin-online-dot" aria-hidden="true" />
+          {onlineCount} online
+        </span>
       </div>
 
       <form className="filters card admin-filters" onSubmit={search}>
@@ -561,7 +526,7 @@ function UsersPanel() {
                 <th>Name</th>
                 <th>Email</th>
                 <th>Role</th>
-                <th>Verified</th>
+                <th>Online</th>
                 <th>Status</th>
                 <th aria-label="Actions" />
               </tr>
@@ -579,17 +544,11 @@ function UsersPanel() {
                     <td data-label="Role">
                       <span className="admin-role">{u.role}</span>
                     </td>
-                    <td data-label="Verified">
-                      {u.isVerified ? (
-                        <span className="admin-verified">
-                          <span className="admin-check" aria-hidden="true">
-                            {icons.check}
-                          </span>
-                          Verified
-                        </span>
-                      ) : (
-                        <span className="admin-unverified">Not verified</span>
-                      )}
+                    <td data-label="Online">
+                      <span className={u.isOnline ? 'admin-online' : 'admin-offline'}>
+                        <span className="admin-online-dot" aria-hidden="true" />
+                        {u.isOnline ? 'Online' : 'Offline'}
+                      </span>
                     </td>
                     <td data-label="Status">
                       <span className={u.isActive ? 'status status-approved' : 'status status-rejected'}>
@@ -599,7 +558,7 @@ function UsersPanel() {
                     <td className="table-actions">
                       <button
                         type="button"
-                        className={u.isActive ? 'btn btn-sm btn-danger' : 'btn btn-sm'}
+                        className={u.isActive ? 'btn btn-sm btn-danger' : 'btn btn-sm btn-primary'}
                         disabled={isSelf || busyId === u.id}
                         title={isSelf ? 'You cannot change your own status' : undefined}
                         onClick={() => toggle(u)}

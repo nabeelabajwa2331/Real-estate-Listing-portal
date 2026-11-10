@@ -80,7 +80,7 @@ chat.
 **Admin**
 
 - Listing approval queue: approve, or reject with a reason
-- User management: activate or deactivate accounts
+- User management: activate or deactivate accounts and see who is online
 - Admins cannot change their own account status
 
 **Search & map**
@@ -340,7 +340,7 @@ accounts, run `npm run purge-unverified`.
 | GET | /api/admin/listings | Admin | Approval queue (`status=pending\|approved\|rejected\|all`) plus counts |
 | PATCH | /api/admin/listings/:id/approve | Admin | Approve a listing |
 | PATCH | /api/admin/listings/:id/reject | Admin | Reject with `reason` |
-| GET | /api/admin/users | Admin | List users (`role`, `q` filters) |
+| GET | /api/admin/users | Admin | List users (`role`, `q` filters) with online status and count |
 | PATCH | /api/admin/users/:id/activate | Admin | Activate an account |
 | PATCH | /api/admin/users/:id/deactivate | Admin | Deactivate an account |
 

@@ -1,7 +1,7 @@
 import Listing from '../models/Listing.js';
 import User from '../models/User.js';
+import { getIO, getOnlineCount, isUserOnline } from '../socket.js';
 
-// Safe shape for a user in admin responses.
 const adminUser = (u) => ({
   id: u._id,
   name: u.name,
@@ -15,7 +15,6 @@ const adminUser = (u) => ({
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-// GET /api/admin/listings?status=pending|approved|rejected|all
 export const getListingsForReview = async (req, res) => {
   const { status } = req.query;
   const filter = status && status !== 'all' ? { status } : {};
@@ -31,7 +30,6 @@ export const getListingsForReview = async (req, res) => {
   res.json({ listings, counts });
 };
 
-// PATCH /api/admin/listings/:id/approve
 export const approveListing = async (req, res) => {
   const listing = await Listing.findById(req.params.id);
   if (!listing) return res.status(404).json({ message: 'Listing not found' });
@@ -45,7 +43,6 @@ export const approveListing = async (req, res) => {
   res.json({ listing, message: 'Listing approved' });
 };
 
-// PATCH /api/admin/listings/:id/reject  { reason }
 export const rejectListing = async (req, res) => {
   const listing = await Listing.findById(req.params.id);
   if (!listing) return res.status(404).json({ message: 'Listing not found' });
@@ -59,7 +56,6 @@ export const rejectListing = async (req, res) => {
   res.json({ listing, message: 'Listing rejected' });
 };
 
-// GET /api/admin/users?role=&q=
 export const getUsers = async (req, res) => {
   const { role, q } = req.query;
   const filter = {};
@@ -70,10 +66,12 @@ export const getUsers = async (req, res) => {
   }
 
   const users = await User.find(filter).sort('-createdAt');
-  res.json({ users: users.map(adminUser) });
+  res.json({
+    users: users.map((u) => ({ ...adminUser(u), isOnline: isUserOnline(u._id) })),
+    onlineCount: getOnlineCount(),
+  });
 };
 
-// Shared by activate/deactivate.
 const setActive = (active) => async (req, res) => {
   const user = await User.findById(req.params.id);
   if (!user) return res.status(404).json({ message: 'User not found' });
@@ -84,11 +82,9 @@ const setActive = (active) => async (req, res) => {
 
   user.isActive = active;
   await user.save();
+  if (!active) getIO()?.in(`user:${user._id}`).disconnectSockets(true);
   res.json({ user: adminUser(user), message: active ? 'User activated' : 'User deactivated' });
 };
 
-// PATCH /api/admin/users/:id/activate
 export const activateUser = setActive(true);
-
-// PATCH /api/admin/users/:id/deactivate
 export const deactivateUser = setActive(false);

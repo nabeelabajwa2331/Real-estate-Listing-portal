@@ -13,7 +13,6 @@ import {
 
 const router = Router();
 
-// Every route here is admin-only.
 router.use(protect, authorize('admin'));
 
 router.get('/listings', getListingsForReview);
