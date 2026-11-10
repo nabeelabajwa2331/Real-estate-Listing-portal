@@ -22,10 +22,8 @@ services:
         sync: false
       - key: CLIENT_URL
         sync: false
+      # The client reads this public ID from /api/auth/google/config at runtime.
       - key: GOOGLE_CLIENT_ID
-        sync: false
-      # Needed at build time by Vite, so set it to the same client ID.
-      - key: VITE_GOOGLE_CLIENT_ID
         sync: false
       - key: SMTP_HOST
         sync: false

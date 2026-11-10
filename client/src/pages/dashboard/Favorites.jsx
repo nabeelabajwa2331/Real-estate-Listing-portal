@@ -4,6 +4,12 @@ import api, { errorMessage } from '../../api/axios.js';
 import ListingCard from '../../components/ListingCard.jsx';
 import { useFavorites } from '../../context/FavoritesContext.jsx';
 
+const heartIcon = (
+  <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z" />
+  </svg>
+);
+
 export default function Favorites() {
   const { ids } = useFavorites();
   const [listings, setListings] = useState([]);
@@ -26,29 +32,36 @@ export default function Favorites() {
   const visible = listings.filter((listing) => ids.has(listing._id));
 
   return (
-    <div>
-      <header className="page-head">
+    <div className="dash-page">
+      <header className="dash-page-head">
         <div>
-          <h1>Favorites</h1>
-          <p className="muted small">
+          <p className="dash-eyebrow">Saved properties</p>
+          <h1>Saved items</h1>
+          <p className="muted small" aria-live="polite">
             {visible.length} saved {visible.length === 1 ? 'property' : 'properties'}
           </p>
+        </div>
+        <div className="dash-page-actions">
+          <Link to="/listings" className="btn">
+            Browse listings
+          </Link>
         </div>
       </header>
 
       {error && <p className="alert alert-error">{error}</p>}
+
       {loading ? (
-        <p className="muted center">Loading favorites...</p>
+        <p className="muted dash-loading">Loading saved items...</p>
       ) : visible.length === 0 ? (
-        <div className="card center empty-state">
-          <h2>No favorites yet</h2>
-          <p className="muted">Tap the heart on any listing to save it here.</p>
-          <Link to="/listings" className="btn btn-primary">
-            Browse listings
-          </Link>
-        </div>
+        !error && (
+          <div className="card dash-empty-state">
+            <span className="dash-empty-icon">{heartIcon}</span>
+            <h2>No saved items yet</h2>
+            <p className="muted">Tap the heart on any listing to save it here.</p>
+          </div>
+        )
       ) : (
-        <div className="search-list">
+        <div className="dash-card-grid">
           {visible.map((listing) => (
             <ListingCard key={listing._id} listing={listing} />
           ))}

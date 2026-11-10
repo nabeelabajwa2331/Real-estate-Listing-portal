@@ -27,6 +27,10 @@ app.use(
   helmet({
     // Images (map tiles, Cloudinary) may be loaded cross-origin.
     crossOriginResourcePolicy: { policy: 'cross-origin' },
+    // Google Identity Services signs in through a popup that posts the
+    // credential back to this page. Helmet's default `same-origin` policy
+    // severs that opener relationship, so allow the popup to talk to us.
+    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],

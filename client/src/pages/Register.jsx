@@ -40,7 +40,7 @@ export default function Register() {
     setError('');
     setGoogleBusy(true);
     try {
-      const signedIn = await loginWithGoogle(credential);
+      const signedIn = await loginWithGoogle(credential, form.role);
       navigate(homeForRole(signedIn.role), { replace: true });
     } catch (err) {
       setError(errorMessage(err));

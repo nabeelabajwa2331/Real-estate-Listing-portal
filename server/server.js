@@ -20,6 +20,13 @@ if (process.env.REQUIRE_EMAIL_VERIFICATION !== 'false' && !process.env.SMTP_HOST
   );
 }
 
+if (!process.env.GOOGLE_CLIENT_ID) {
+  console.warn(
+    'Google sign-in is disabled because GOOGLE_CLIENT_ID is not set. ' +
+      'Add a Google OAuth Web application client ID to enable "Continue with Google".'
+  );
+}
+
 await connectDB();
 
 // Socket.IO attaches to this http server for real-time inquiry delivery.

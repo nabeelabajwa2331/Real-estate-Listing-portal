@@ -13,6 +13,8 @@ COPY client/ ./
 # Optional map tiles at build time (client/.env is not copied into the image).
 ARG VITE_MAPTILER_KEY=""
 ARG VITE_MAP_STYLE="streets-v2"
+# Optional build-time fallback. Normally the client reads GOOGLE_CLIENT_ID from
+# the API at runtime, so this can stay empty.
 ARG VITE_GOOGLE_CLIENT_ID=""
 ENV VITE_MAPTILER_KEY=$VITE_MAPTILER_KEY
 ENV VITE_MAP_STYLE=$VITE_MAP_STYLE

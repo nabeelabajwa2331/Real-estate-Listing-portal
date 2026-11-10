@@ -1,7 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import api from '../api/axios.js';
 
 const SCRIPT_ID = 'google-identity-services';
 const SCRIPT_SRC = 'https://accounts.google.com/gsi/client';
+const CONFIG_MESSAGE =
+  "Google sign-in is not configured. Add GOOGLE_CLIENT_ID to the server environment and add this site to the OAuth client's Authorized JavaScript origins in Google Cloud.";
 
 let scriptPromise = null;
 
@@ -20,10 +23,24 @@ function loadGoogleScript() {
       script.defer = true;
       document.head.appendChild(script);
     }
-    script.addEventListener('load', () => resolve(), { once: true });
-    script.addEventListener('error', () => reject(new Error('Google script failed to load')), {
-      once: true,
-    });
+
+    const timer = setTimeout(() => reject(new Error('Google script timed out')), 12000);
+    const done = () => {
+      clearTimeout(timer);
+      resolve();
+    };
+    const fail = () => {
+      clearTimeout(timer);
+      reject(new Error('Google script failed to load'));
+    };
+
+    script.addEventListener('load', done, { once: true });
+    script.addEventListener('error', fail, { once: true });
+  }).catch((error) => {
+    // Do not cache a failed load forever: a later mount (or a retry after the
+    // network recovers) should be able to load the script again.
+    scriptPromise = null;
+    throw error;
   });
 
   return scriptPromise;
@@ -50,40 +67,68 @@ const GoogleIcon = () => (
   </svg>
 );
 
-// Renders Google's official sign-in button when a client ID is configured.
-// Without one it still shows a styled button that explains what is missing, so
-// the option is visible in development instead of silently disappearing.
-export default function GoogleAuthButton({ onCredential, onError }) {
+// Renders Google's official sign-in button. The client ID is fetched from the
+// server at runtime so enabling Google sign-in only requires GOOGLE_CLIENT_ID
+// on the API (VITE_GOOGLE_CLIENT_ID remains a fallback for static hosting).
+export default function GoogleAuthButton({ onCredential, onError, onDemo }) {
   const hostRef = useRef(null);
   const credentialRef = useRef(onCredential);
   const errorRef = useRef(onError);
+  const demoRef = useRef(onDemo);
+  const envClientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim();
+  const [clientId, setClientId] = useState('');
+  const [demoAvailable, setDemoAvailable] = useState(false);
+  const [loadingConfig, setLoadingConfig] = useState(true);
 
   credentialRef.current = onCredential;
   errorRef.current = onError;
-
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  demoRef.current = onDemo;
 
   useEffect(() => {
-    if (!clientId) return undefined;
+    let active = true;
+
+    api
+      // Render's free tier can take 30-60s to wake up, so allow enough time
+      // for the first request instead of showing a false "not configured"
+      // state while the API is still starting.
+      .get('/auth/google/config', { timeout: 60000 })
+      .then(({ data }) => {
+        if (!active) return;
+        // Trust the API when it answers: if it has no client ID, rendering a
+        // button here would only fail later at /auth/google.
+        setClientId(String(data?.clientId || '').trim());
+        setDemoAvailable(Boolean(data?.demo));
+      })
+      .catch(() => {
+        if (active) setClientId(envClientId);
+      })
+      .finally(() => {
+        if (active) setLoadingConfig(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [envClientId]);
+
+  useEffect(() => {
+    if (loadingConfig || !clientId) return undefined;
 
     let cancelled = false;
     let resizeTimer;
+    let renderCheckTimer;
 
-    const render = () => {
+    const renderButton = () => {
       const host = hostRef.current;
-      if (cancelled || !host || !window.google?.accounts?.id) return;
+      if (cancelled || !host) return;
+      if (!window.google?.accounts?.id) {
+        errorRef.current?.(
+          'Google sign-in could not start. Check the OAuth client configuration and Authorized JavaScript origins.'
+        );
+        return;
+      }
 
       const width = Math.min(Math.max(host.clientWidth || 320, 220), 400);
-      window.google.accounts.id.initialize({
-        client_id: clientId,
-        callback: (response) => {
-          if (response?.credential) credentialRef.current?.(response.credential);
-          else errorRef.current?.('Google sign-in was cancelled. Please try again.');
-        },
-        auto_select: false,
-        cancel_on_tap_outside: true,
-      });
-
       host.innerHTML = '';
       window.google.accounts.id.renderButton(host, {
         type: 'standard',
@@ -94,19 +139,54 @@ export default function GoogleAuthButton({ onCredential, onError }) {
         logo_alignment: 'left',
         width,
       });
+
+      clearTimeout(renderCheckTimer);
+      renderCheckTimer = setTimeout(() => {
+        if (!cancelled && host.childElementCount === 0) {
+          errorRef.current?.(
+            'Google sign-in could not start. Check that this site is listed under Authorized JavaScript origins for the OAuth client.'
+          );
+        }
+      }, 1200);
+    };
+
+    const start = () => {
+      if (cancelled || !window.google?.accounts?.id) {
+        errorRef.current?.(
+          'Google sign-in could not start. Check the OAuth client configuration and Authorized JavaScript origins.'
+        );
+        return;
+      }
+
+      // Configure once; resizing only re-renders the button.
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: (response) => {
+          if (response?.credential) credentialRef.current?.(response.credential);
+          else errorRef.current?.('Google sign-in was cancelled. Please try again.');
+        },
+        auto_select: false,
+        cancel_on_tap_outside: true,
+        ux_mode: 'popup',
+      });
+
+      renderButton();
     };
 
     const onResize = () => {
       clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(render, 150);
+      resizeTimer = setTimeout(renderButton, 150);
     };
 
     loadGoogleScript()
-      .then(render)
+      .then(start)
       .catch(() => {
-        if (!cancelled) {
-          errorRef.current?.('Google sign-in could not load. Check your connection and try again.');
-        }
+        if (cancelled) return;
+        errorRef.current?.(
+          window.google?.accounts?.id
+            ? 'Google sign-in could not start. Check the OAuth client configuration and Authorized JavaScript origins.'
+            : 'Google sign-in could not load. Check your connection and try again.'
+        );
       });
 
     window.addEventListener('resize', onResize);
@@ -114,20 +194,51 @@ export default function GoogleAuthButton({ onCredential, onError }) {
     return () => {
       cancelled = true;
       clearTimeout(resizeTimer);
+      clearTimeout(renderCheckTimer);
       window.removeEventListener('resize', onResize);
     };
-  }, [clientId]);
+  }, [clientId, loadingConfig]);
+
+  if (loadingConfig) {
+    return (
+      <button type="button" className="btn google-btn" disabled>
+        <GoogleIcon />
+        Checking Google…
+      </button>
+    );
+  }
+
+  // No real client ID, but the API offers the sample-account demo fallback.
+  if (!clientId && demoAvailable) {
+    return (
+      <div className="google-demo">
+        <button
+          type="button"
+          className="btn google-btn"
+          onClick={() =>
+            demoRef.current
+              ? demoRef.current()
+              : errorRef.current?.('Google demo sign-in is unavailable on this page.')
+          }
+        >
+          <GoogleIcon />
+          Continue with Google
+          <span className="google-demo-pill">Demo</span>
+        </button>
+        <p className="google-demo-note muted small">
+          Demo mode signs you into a sample account. Add a Google Client ID to enable real Google
+          sign-in.
+        </p>
+      </div>
+    );
+  }
 
   if (!clientId) {
     return (
       <button
         type="button"
         className="btn google-btn"
-        onClick={() =>
-          errorRef.current?.(
-            'Google sign-in is not configured yet. Add VITE_GOOGLE_CLIENT_ID to the client and GOOGLE_CLIENT_ID to the server.'
-          )
-        }
+        onClick={() => errorRef.current?.(CONFIG_MESSAGE)}
       >
         <GoogleIcon />
         Continue with Google

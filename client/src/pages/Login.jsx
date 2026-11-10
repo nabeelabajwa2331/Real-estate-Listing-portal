@@ -9,7 +9,11 @@ export default function Login() {
   const { user, login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname; // page the user was sent here from
+  // Keep the full destination (including filters) so a direct saved-items URL
+  // or a deep link returns the user to exactly where they were going.
+  const from = location.state?.from
+    ? `${location.state.from.pathname}${location.state.from.search || ''}${location.state.from.hash || ''}`
+    : null;
 
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');

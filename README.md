@@ -215,7 +215,7 @@ Copy `server/.env.example` to `server/.env`. The most important values:
 | `MONGO_URI` | MongoDB connection string |
 | `JWT_SECRET` | Secret for signing auth tokens |
 | `CLIENT_URL` | Public URL of the app (CORS + links in emails) |
-| `GOOGLE_CLIENT_ID` | OAuth client ID for "Continue with Google" |
+| `GOOGLE_CLIENT_ID` | Google OAuth Web application client ID; the API exposes it at runtime for "Continue with Google" |
 | `COOKIE_SAMESITE` | `lax` for same-site, `none` for cross-site HTTPS |
 | `REQUIRE_EMAIL_VERIFICATION` | `true` in production, `false` to skip the email step |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `EMAIL_FROM` | Outgoing email |
@@ -223,18 +223,38 @@ Copy `server/.env.example` to `server/.env`. The most important values:
 | `GEOCODE_USER_AGENT` | User-Agent sent to Nominatim (their policy requires one) |
 
 Optional client settings live in `client/.env` (`VITE_MAPTILER_KEY`,
-`VITE_MAP_STYLE`, `VITE_GOOGLE_CLIENT_ID`). `VITE_GOOGLE_CLIENT_ID` must match
-the server's `GOOGLE_CLIENT_ID`.
+`VITE_MAP_STYLE`). `VITE_GOOGLE_CLIENT_ID` is an optional fallback only; Google
+sign-in normally reads the client ID from the API at runtime. If you set it, it
+must match the server's `GOOGLE_CLIENT_ID`.
 
 ### Google sign-in
 
 1. Create an **OAuth 2.0 Client ID → Web application** in the
    [Google Cloud console](https://console.cloud.google.com/apis/credentials).
-2. Add your origins under **Authorised JavaScript origins**
-   (`http://localhost:5173`, plus your production URL).
-3. Set `GOOGLE_CLIENT_ID` on the server and `VITE_GOOGLE_CLIENT_ID` on the client
-   to the same value, then restart/rebuild. The "Continue with Google" button is
-   shown on both the sign-in and registration pages.
+2. Add every browser origin that serves the app under
+   **Authorized JavaScript origins**:
+   - `http://localhost:5173` for local development
+   - `https://real-estate-listing-portal-hazel.vercel.app` for the deployed app
+   - your Render URL if you also open the app there directly
+
+   No redirect URI or client secret is needed for this ID-token flow.
+3. Set **`GOOGLE_CLIENT_ID` on the API** (in `server/.env` locally, or in
+   Render's environment) and restart the service. The client fetches this
+   public ID at runtime from `/api/auth/google/config`, so you do **not** need
+   to rebuild the Vercel front end.
+
+`VITE_GOOGLE_CLIENT_ID` is still supported as an optional build-time fallback
+for static hosting where the API config endpoint is unavailable. If you use it,
+it must be the same client ID as the server's `GOOGLE_CLIENT_ID`.
+
+The "Continue with Google" button is shown on both the sign-in and registration
+pages. If it reports that Google sign-in is not configured, check that
+`GOOGLE_CLIENT_ID` is set on the API and that the current site origin is listed
+under Authorized JavaScript origins. If the popup opens but never completes,
+allow popups for the site and confirm the client ID belongs to a **Web
+application** OAuth client. If Google shows an access-blocked message, the
+OAuth consent screen is probably still in **Testing**; add the Google account
+you are using under **Test users** or publish the app.
 
 ---
 
@@ -505,9 +525,12 @@ API requests so the browser only ever talks to the Vercel origin.
    - **Build Command:** `npm run build`
    - **Output Directory:** `dist`
    - Environment variables: `VITE_MAPTILER_KEY` / `VITE_MAP_STYLE` (optional,
-     for styled map tiles) and `VITE_GOOGLE_CLIENT_ID` (for Google sign-in).
-     Leave `VITE_API_URL` unset so requests stay relative.
-5. Redeploy the API so the new CORS settings apply.
+     for styled map tiles). Leave `VITE_API_URL` unset so requests stay relative.
+     Google sign-in is configured on the API, so no Vercel Google variable is
+     required. (`VITE_GOOGLE_CLIENT_ID` is only an optional fallback.)
+5. On Render set `GOOGLE_CLIENT_ID` to your Google OAuth Web application client
+   ID and redeploy the API. Add the Vercel origin to the client's Authorized
+   JavaScript origins in Google Cloud.
 
 `client/vercel.json` proxies `/api`, `/uploads` and `/socket.io` to the API host
 and falls back to `index.html` for client-side routes. Prefer calling the API

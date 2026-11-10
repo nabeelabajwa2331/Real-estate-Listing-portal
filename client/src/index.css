@@ -3475,7 +3475,10 @@ main.container {
   letter-spacing: -0.02em;
   color: var(--text-strong);
 }
-.dash-stat span {
+/* Scope this to the copy block so it cannot override .dash-stat-icon's
+   inline-flex centring. An unscoped `.dash-stat span` turned the icon badge
+   into a block, which pinned the SVG to the top-left corner. */
+.dash-stat > div span {
   display: block;
 }
 .dash-grid {

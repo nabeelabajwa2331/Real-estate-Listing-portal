@@ -27,8 +27,15 @@ export function AuthProvider({ children }) {
     return data.message;
   };
 
-  const loginWithGoogle = async (credential) => {
-    const { data } = await api.post('/auth/google', { credential });
+  const loginWithGoogle = async (credential, role) => {
+    const { data } = await api.post('/auth/google', { credential, ...(role ? { role } : {}) });
+    setUser(data.user);
+    return data.user;
+  };
+
+  // Demo fallback shown while no real Google client ID is configured.
+  const loginWithGoogleDemo = async (role) => {
+    const { data } = await api.post('/auth/google/demo', role ? { role } : {});
     setUser(data.user);
     return data.user;
   };
@@ -65,6 +72,7 @@ export function AuthProvider({ children }) {
         loading,
         login,
         loginWithGoogle,
+        loginWithGoogleDemo,
         register,
         logout,
         updateProfile,

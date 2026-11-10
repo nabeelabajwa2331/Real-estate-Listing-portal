@@ -212,13 +212,89 @@ export const login = async (req, res) => {
   res.json({ user: publicUser(user) });
 };
 
+// Demo fallback for "Continue with Google". It exists only while no real
+// Google client ID is configured, and can be switched off explicitly with
+// GOOGLE_DEMO_LOGIN=false. It signs into fixed sample accounts — it is not
+// real Google authentication.
+const googleDemoEnabled = () => {
+  if (String(process.env.GOOGLE_CLIENT_ID || '').trim()) return false;
+  const flag = String(process.env.GOOGLE_DEMO_LOGIN ?? 'true').trim().toLowerCase();
+  return !['false', '0', 'off', 'no'].includes(flag);
+};
+
+// GET /api/auth/google/config
+// The browser needs the public OAuth client ID to render Google's button. It
+// is read at runtime so a deployment only has to set GOOGLE_CLIENT_ID on the
+// server instead of rebuilding the client with VITE_GOOGLE_CLIENT_ID.
+export const googleConfig = (req, res) => {
+  const clientId = String(process.env.GOOGLE_CLIENT_ID || '').trim();
+  // Keep this fresh so changing GOOGLE_CLIENT_ID takes effect on the next page
+  // load instead of waiting for a cached "not configured" response to expire.
+  res.set('Cache-Control', 'no-store');
+  res.json({
+    clientId: clientId || null,
+    enabled: Boolean(clientId),
+    demo: googleDemoEnabled(),
+  });
+};
+
+// POST /api/auth/google/demo
+// Signs into a fixed sample account so the "Continue with Google" option can be
+// exercised without a Google Cloud project. Never available once a real client
+// ID is set, and can be disabled with GOOGLE_DEMO_LOGIN=false.
+export const googleDemoLogin = async (req, res) => {
+  if (!googleDemoEnabled()) {
+    return res.status(503).json({ message: 'Google demo sign-in is disabled' });
+  }
+
+  const role = req.body?.role === 'agent' ? 'agent' : 'user';
+  const email = role === 'agent' ? 'demo.google.agent@example.com' : 'demo.google@example.com';
+  const googleId = role === 'agent' ? 'demo-google-agent' : 'demo-google-user';
+
+  let user = await User.findOne({ $or: [{ googleId }, { email }] });
+
+  if (!user) {
+    user = await User.create({
+      name: role === 'agent' ? 'Demo Google Agent' : 'Demo Google Buyer',
+      email,
+      phone: '',
+      // Same approach as a real Google account: a random password nobody knows.
+      password: crypto.randomBytes(32).toString('hex'),
+      role,
+      isVerified: true,
+      googleId,
+    });
+  } else {
+    if (!user.isActive) {
+      return res.status(403).json({ message: 'This demo account has been deactivated' });
+    }
+
+    let changed = false;
+    if (!user.googleId) {
+      user.googleId = googleId;
+      changed = true;
+    }
+    if (!user.isVerified) {
+      user.isVerified = true;
+      changed = true;
+    }
+    if (changed) await user.save();
+  }
+
+  sendTokenCookie(res, user);
+  res.json({ user: publicUser(user), demo: true });
+};
+
 // POST /api/auth/google
 // Verifies the Google ID token from the browser and signs the user in. A new
 // account is created on first use; an existing account with the same verified
 // email is linked to the Google identity.
 export const googleLogin = async (req, res) => {
   const { credential } = req.body || {};
-  const clientId = process.env.GOOGLE_CLIENT_ID;
+  // The register page lets a new Google user choose buyer or agent. Existing
+  // accounts keep their current role.
+  const requestedRole = req.body?.role === 'agent' ? 'agent' : 'user';
+  const clientId = String(process.env.GOOGLE_CLIENT_ID || '').trim();
 
   if (!clientId) {
     return res.status(503).json({ message: 'Google sign-in is not configured on this server' });
@@ -230,35 +306,52 @@ export const googleLogin = async (req, res) => {
   let profile;
   try {
     const response = await fetch(
-      `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`
+      `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`,
+      { cache: 'no-store', signal: AbortSignal.timeout(8000) }
     );
     if (!response.ok) {
       return res.status(401).json({ message: 'Google sign-in failed. Please try again.' });
     }
     profile = await response.json();
+    if (!profile || typeof profile !== 'object') {
+      return res.status(401).json({ message: 'Google sign-in could not be verified. Please try again.' });
+    }
   } catch {
     return res.status(502).json({ message: 'Could not reach Google. Please try again.' });
   }
 
+  // `aud` is normally a string, but accept an array in case Google returns a
+  // multi-audience token. Every other check is the minimum needed to trust the
+  // identity: the token must be for this app, issued by Google, and carry a
+  // verified email address.
+  const audiences = Array.isArray(profile.aud) ? profile.aud : [profile.aud];
   const validIssuer = ['accounts.google.com', 'https://accounts.google.com'].includes(profile.iss);
   const emailVerified = profile.email_verified === true || profile.email_verified === 'true';
 
-  if (profile.aud !== clientId || !validIssuer || !emailVerified || !profile.email) {
+  if (
+    !profile.sub ||
+    !profile.email ||
+    !audiences.includes(clientId) ||
+    !validIssuer ||
+    !emailVerified
+  ) {
     return res.status(401).json({ message: 'Google sign-in could not be verified. Please try again.' });
   }
 
-  const email = String(profile.email).toLowerCase();
+  const email = String(profile.email).trim().toLowerCase();
   let user = await User.findOne({ $or: [{ googleId: profile.sub }, { email }] });
 
   if (!user) {
+    const name =
+      String(profile.name || email.split('@')[0]).trim().slice(0, 80) || 'Google user';
     user = await User.create({
-      name: profile.name || email.split('@')[0],
+      name,
       email,
       phone: '',
       // Google accounts never use password sign-in, so store an unguessable
       // random password instead of leaving the required field empty.
       password: crypto.randomBytes(32).toString('hex'),
-      role: 'user',
+      role: requestedRole,
       isVerified: true,
       googleId: profile.sub,
       avatar: profile.picture ? { url: profile.picture } : undefined,

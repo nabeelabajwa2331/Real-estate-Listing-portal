@@ -1,0 +1,414 @@
+/* Premium marketplace header.
+   Scoped to the app header so the older public-page navbar rules in index.css
+   cannot leak into the redesigned component. */
+
+.app-header {
+  --app-header-h: 72px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: saturate(1.2) blur(10px);
+}
+
+.app-header-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  max-width: 1280px;
+  min-height: var(--app-header-h);
+  margin: 0 auto;
+  padding: 0 clamp(16px, 4vw, 28px);
+}
+
+/* ---------- Brand ---------- */
+.app-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  flex-shrink: 0;
+  color: var(--text-strong);
+  text-decoration: none;
+}
+
+.app-brand:hover {
+  color: var(--text-strong);
+  text-decoration: none;
+}
+
+.app-brand-mark {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  box-shadow: 0 4px 12px rgba(15, 107, 79, 0.18);
+}
+
+.app-brand-copy {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.app-brand-name {
+  font-size: 1.08rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.app-brand-tag {
+  margin-top: 2px;
+  color: var(--muted-2);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+/* ---------- Navigation ---------- */
+.app-nav {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-width: 0;
+}
+
+.app-nav-links,
+.app-nav-account {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.app-nav-account {
+  gap: 10px;
+  margin-left: auto;
+}
+
+.app-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.91rem;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.app-nav-link:hover {
+  background: var(--surface-2);
+  color: var(--text-strong);
+  text-decoration: none;
+}
+
+.app-nav-link.active {
+  background: var(--accent-soft);
+  color: var(--primary);
+}
+
+.app-nav-icon {
+  display: grid;
+  flex: 0 0 17px;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  line-height: 0;
+}
+
+.app-nav-icon svg {
+  display: block;
+}
+
+.app-nav-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.app-nav-link.active .app-nav-count {
+  background: var(--primary);
+}
+
+/* ---------- Account area ---------- */
+.app-account-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 42px;
+  padding: 4px 10px 4px 5px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--text);
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.app-account-chip:hover {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text-strong);
+  text-decoration: none;
+}
+
+.app-account-copy {
+  display: flex;
+  flex-direction: column;
+  max-width: 140px;
+  line-height: 1.15;
+}
+
+.app-account-name {
+  overflow: hidden;
+  color: var(--text-strong);
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-account-role {
+  margin-top: 2px;
+  color: var(--muted-2);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.app-signout {
+  min-height: 38px;
+  padding: 0 12px;
+  font-size: 0.86rem;
+}
+
+.app-nav-signin {
+  color: var(--text);
+}
+
+.app-register {
+  min-height: 40px;
+  padding: 0 17px;
+  font-size: 0.88rem;
+}
+
+/* ---------- Mobile trigger ---------- */
+.app-nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-left: auto;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text-strong);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.app-nav-toggle:hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+}
+
+.app-nav-toggle:focus-visible,
+.app-nav-link:focus-visible,
+.app-account-chip:focus-visible,
+.app-register:focus-visible,
+.app-signout:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.app-nav-toggle svg {
+  display: block;
+}
+
+.app-nav-bars {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: 18px;
+}
+
+.app-nav-bars span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+}
+
+.app-nav-scrim {
+  display: none;
+}
+
+/* ---------- Collapsed navigation ---------- */
+@media (max-width: 1080px) {
+  .app-nav-link {
+    padding: 0 9px;
+    font-size: 0.88rem;
+  }
+
+  .app-account-copy {
+    display: none;
+  }
+}
+
+@media (max-width: 980px) {
+  .app-header-inner {
+    gap: 16px;
+    min-height: var(--app-header-h);
+  }
+
+  .app-nav-toggle {
+    display: inline-flex;
+  }
+
+  .app-nav {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 10px clamp(16px, 4vw, 28px) 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    box-shadow: var(--shadow-hover);
+    max-height: calc(100vh - var(--app-header-h));
+    max-height: calc(100dvh - var(--app-header-h));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .app-nav.open {
+    display: flex;
+  }
+
+  .app-nav-links {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    width: 100%;
+  }
+
+  .app-nav-link {
+    justify-content: flex-start;
+    gap: 10px;
+    width: 100%;
+    min-height: 46px;
+    padding: 0 12px;
+    border-radius: 8px;
+    font-size: 0.97rem;
+  }
+
+  .app-nav-link.active {
+    background: var(--accent-soft);
+  }
+
+  .app-nav-account {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    width: 100%;
+    margin-top: 12px;
+    margin-left: 0;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .app-account-chip {
+    justify-content: flex-start;
+    width: 100%;
+    min-height: 50px;
+    padding: 6px 10px;
+    border-color: var(--border);
+    border-radius: 10px;
+  }
+
+  .app-account-copy {
+    display: flex;
+    max-width: none;
+  }
+
+  .app-account-name {
+    font-size: 0.92rem;
+  }
+
+  .app-signout {
+    min-height: 46px;
+    width: 100%;
+    border-color: var(--border);
+    background: var(--surface);
+  }
+
+  .app-nav-signin {
+    min-height: 46px;
+  }
+
+  .app-register {
+    width: 100%;
+    min-height: 46px;
+  }
+
+  .app-nav-scrim {
+    display: block;
+    position: fixed;
+    inset: var(--app-header-h) 0 0;
+    z-index: 0;
+    border: 0;
+    padding: 0;
+    background: rgba(18, 36, 28, 0.32);
+    cursor: pointer;
+  }
+}
+
+@media (max-width: 420px) {
+  .app-brand-tag {
+    display: none;
+  }
+
+  .app-brand-name {
+    font-size: 1.02rem;
+  }
+
+  .app-brand-mark {
+    width: 34px;
+    height: 34px;
+    font-size: 0.84rem;
+  }
+}

@@ -3,6 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import api, { errorMessage } from '../../api/axios.js';
 import { searchSummary, searchQueryString } from '../../utils/search.js';
 
+const searchIcon = (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="11" cy="11" r="7" />
+    <path d="m20 20-3.5-3.5" />
+  </svg>
+);
+
 export default function SavedSearches() {
   const navigate = useNavigate();
   const [searches, setSearches] = useState([]);
@@ -42,38 +49,45 @@ export default function SavedSearches() {
   };
 
   return (
-    <div>
-      <header className="page-head">
+    <div className="dash-page">
+      <header className="dash-page-head">
         <div>
+          <p className="dash-eyebrow">Search library</p>
           <h1>Saved searches</h1>
           <p className="muted small">Re-run a search to see the latest matches.</p>
         </div>
-        <Link to="/listings" className="btn">
-          New search
-        </Link>
+        <div className="dash-page-actions">
+          <Link to="/listings" className="btn btn-primary">
+            New search
+          </Link>
+        </div>
       </header>
 
       {error && <p className="alert alert-error">{error}</p>}
+
       {loading ? (
-        <p className="muted center">Loading saved searches...</p>
+        <p className="muted dash-loading">Loading saved searches...</p>
       ) : searches.length === 0 ? (
-        <div className="card center empty-state">
-          <h2>No saved searches</h2>
-          <p className="muted">Use “Save search” on the browse page to keep one here.</p>
-          <Link to="/listings" className="btn btn-primary">
-            Browse listings
-          </Link>
-        </div>
+        !error && (
+          <div className="card dash-empty-state">
+            <span className="dash-empty-icon">{searchIcon}</span>
+            <h2>No saved searches</h2>
+            <p className="muted">Use “Save search” on the browse page to keep one here.</p>
+          </div>
+        )
       ) : (
-        <ul className="saved-list">
+        <ul className="dash-saved-list">
           {searches.map((search) => (
-            <li className="card saved-item" key={search._id}>
-              <div className="saved-info">
-                <p className="saved-name">{search.name}</p>
-                <p className="muted small">{searchSummary(search.params)}</p>
-                <p className="muted small">Saved {new Date(search.createdAt).toLocaleDateString()}</p>
+            <li className="card dash-saved-item" key={search._id}>
+              <div className="dash-saved-main">
+                <span className="dash-saved-icon">{searchIcon}</span>
+                <div>
+                  <p className="dash-saved-name">{search.name}</p>
+                  <p className="muted small dash-saved-meta">{searchSummary(search.params)}</p>
+                  <p className="dash-saved-date">Saved {new Date(search.createdAt).toLocaleDateString()}</p>
+                </div>
               </div>
-              <div className="saved-actions">
+              <div className="dash-saved-actions">
                 <button type="button" className="btn btn-sm btn-primary" onClick={() => run(search)}>
                   Run search
                 </button>

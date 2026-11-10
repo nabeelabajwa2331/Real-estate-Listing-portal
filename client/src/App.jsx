@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
 import ProtectedRoute from './routes/ProtectedRoute.jsx';
 import RoleRoute from './routes/RoleRoute.jsx';
@@ -32,11 +32,22 @@ function ChatRedirect() {
   return <Navigate to={`/messages/chat/${id}`} replace />;
 }
 
+// The dashboard and admin screens are full-viewport application shells with
+// their own sidebar, so they must not sit inside the public page container.
+const isWorkspacePath = (pathname) =>
+  pathname === '/dashboard' ||
+  pathname.startsWith('/dashboard/') ||
+  pathname === '/admin' ||
+  pathname.startsWith('/admin/');
+
 export default function App() {
+  const { pathname } = useLocation();
+  const isWorkspace = isWorkspacePath(pathname);
+
   return (
     <>
-      <Navbar />
-      <main className="container">
+      {!isWorkspace && <Navbar />}
+      <main className={isWorkspace ? 'workspace-main' : 'container'}>
         <Routes>
           <Route path="/" element={<Home />} />
           {/* Browsing the full catalogue requires an account. A shared listing
@@ -59,14 +70,19 @@ export default function App() {
             <Route path="/chat" element={<Navigate to="/messages?tab=chats" replace />} />
             <Route path="/chat/:id" element={<ChatRedirect />} />
 
-            {/* Favorites and saved searches are available to every signed-in
-                account, not only buyers, so agents and admins can use them too. */}
+            {/* Saved items are member-facing for every signed-in account.
+                The canonical URL is /dashboard/saved; the old /dashboard/favorites
+                path and top-level /saved aliases stay valid for bookmarks. */}
             <Route path="/dashboard" element={<DashboardLayout />}>
               <Route index element={<Overview />} />
-              <Route path="favorites" element={<Favorites />} />
+              <Route path="saved" element={<Favorites />} />
+              <Route path="favorites" element={<Navigate to="/dashboard/saved" replace />} />
               <Route path="searches" element={<SavedSearches />} />
             </Route>
           </Route>
+
+          <Route path="/saved" element={<Navigate to="/dashboard/saved" replace />} />
+          <Route path="/saved-items" element={<Navigate to="/dashboard/saved" replace />} />
 
           <Route element={<RoleRoute roles={['agent']} />}>
             <Route path="/agent" element={<AgentDashboard />} />
@@ -74,9 +90,13 @@ export default function App() {
             <Route path="/agent/:id/edit" element={<ListingForm />} />
           </Route>
 
+          {/* Admin surfaces are protected by RoleRoute as well as hidden from
+              member navigation. A signed-in non-admin is redirected away by the
+              guard, so typing the URL directly cannot open the dashboard. */}
           <Route element={<RoleRoute roles={['admin']} />}>
             <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/*" element={<AdminDashboard />} />
+            <Route path="/admin/users" element={<AdminDashboard />} />
+            <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />

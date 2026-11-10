@@ -11,6 +11,8 @@ import {
   verifyEmail,
   resendVerification,
   login,
+  googleConfig,
+  googleDemoLogin,
   googleLogin,
   logout,
   forgotPassword,
@@ -78,7 +80,24 @@ router.post(
   validate,
   login
 );
-router.post('/google', authLimiter, [body('credential').isString().notEmpty().withMessage('Missing Google credential')], validate, googleLogin);
+router.get('/google/config', googleConfig);
+router.post(
+  '/google/demo',
+  authLimiter,
+  [body('role').optional().isIn(['user', 'agent']).withMessage('Role must be user or agent')],
+  validate,
+  googleDemoLogin
+);
+router.post(
+  '/google',
+  authLimiter,
+  [
+    body('credential').isString().notEmpty().withMessage('Missing Google credential'),
+    body('role').optional().isIn(['user', 'agent']).withMessage('Role must be user or agent'),
+  ],
+  validate,
+  googleLogin
+);
 router.post('/logout', logout);
 
 router.post('/forgot-password', authLimiter, [email()], validate, forgotPassword);
