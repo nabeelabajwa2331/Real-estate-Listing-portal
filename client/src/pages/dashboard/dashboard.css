@@ -1586,3 +1586,149 @@ a.dash-metric:hover {
     display: none;
   }
 }
+
+/* ============================================================
+   Green workspace sidebars (member + admin)
+   Both sidebars use the site's primary green with white text so
+   the workspace matches the marketplace branding.
+   ============================================================ */
+.dash-sidebar,
+.admin-sidebar {
+  background: var(--primary);
+  border-right-color: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.dash-sidebar::-webkit-scrollbar-thumb,
+.admin-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.dash-sidebar-head,
+.admin-sidebar-head,
+.dash-profile,
+.dash-sidebar-foot,
+.admin-sidebar-foot {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.dash-brand,
+.dash-brand:hover,
+.admin-brand,
+.admin-brand:hover {
+  color: #ffffff;
+}
+
+/* Invert the brand tile so it stays visible on the green surface. */
+.dash-brand-mark,
+.admin-brand-mark {
+  background: #ffffff;
+  color: var(--primary);
+}
+
+.dash-brand-name,
+.admin-brand-title,
+.dash-profile-name,
+.dash-sidebar-note strong,
+.admin-sidebar-user strong {
+  color: #ffffff;
+}
+
+.dash-brand-tag,
+.admin-brand-sub,
+.dash-profile-role,
+.dash-sidebar-note,
+.admin-sidebar-user small {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.dash-nav-label,
+.admin-nav-label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.dash-nav-link,
+.admin-nav-item,
+.admin-side-link {
+  color: #ffffff;
+}
+
+.dash-nav-link:hover,
+.admin-nav-item:hover,
+.admin-side-link:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.dash-nav-link.active,
+.admin-nav-item.active {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  box-shadow: inset 3px 0 0 #ffffff;
+}
+
+/* Keep keyboard focus visible against the green background. */
+.dash-sidebar .dash-nav-link:focus-visible,
+.admin-sidebar .admin-nav-item:focus-visible,
+.admin-sidebar .admin-side-link:focus-visible,
+.dash-sidebar .dash-close:focus-visible,
+.admin-sidebar .admin-close:focus-visible,
+.dash-sidebar .dash-signout:focus-visible,
+.admin-sidebar .admin-signout:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.45);
+}
+
+.dash-nav-count,
+.admin-nav-count {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.dash-nav-link.active .dash-nav-count,
+.admin-nav-item.active .admin-nav-count {
+  background: #ffffff;
+  color: var(--primary);
+}
+
+.dash-close,
+.admin-close {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: transparent;
+  color: #ffffff;
+}
+
+.dash-close:hover,
+.admin-close:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.dash-signout,
+.admin-signout {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: transparent;
+  color: #ffffff;
+}
+
+.dash-signout:hover,
+.admin-signout:hover {
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
+.admin-sidebar-user {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.admin-sidebar-badge {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+/* A soft ring keeps the avatar crisp against the green surface. */
+.dash-profile .avatar,
+.admin-sidebar-user .avatar {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
+}
