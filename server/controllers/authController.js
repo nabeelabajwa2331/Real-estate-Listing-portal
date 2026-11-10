@@ -5,6 +5,7 @@ import PendingUser from '../models/PendingUser.js';
 import sendEmail from '../utils/sendEmail.js';
 import { uploadImages, deleteImage } from '../utils/upload.js';
 import { normalizePakistaniPhone } from '../utils/phone.js';
+import { isDemoBuyer } from '../utils/demo.js';
 import {
   sendTokenCookie,
   clearTokenCookie,
@@ -42,6 +43,8 @@ const publicUser = (u) => ({
   isVerified: u.isVerified,
   createdAt: u.createdAt,
   avatar: u.avatar?.url || null,
+  // Lets the browser switch the sample Google buyer into its read-only UI.
+  isDemoBuyer: isDemoBuyer(u),
 });
 
 async function sendVerificationEmail(user, rawToken) {

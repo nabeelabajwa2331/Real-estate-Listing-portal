@@ -31,6 +31,7 @@ const tabs = [
 
 export default function Messages() {
   const { user } = useAuth();
+  const demoBuyer = Boolean(user?.isDemoBuyer);
   const { refresh: refreshInquiries, tick: inquiryTick } = useInquiries();
   const { refresh: refreshChat, tick: chatTick } = useChat();
   const navigate = useNavigate();
@@ -240,6 +241,7 @@ export default function Messages() {
   };
 
   const startWith = async (person) => {
+    if (demoBuyer) return;
     setListError('');
     try {
       const { data } = await api.post('/chat/conversations', { userId: person.id });
@@ -257,7 +259,7 @@ export default function Messages() {
 
   const send = async (e) => {
     e.preventDefault();
-    if (!draft.trim() || !activeKind) return;
+    if (demoBuyer || !draft.trim() || !activeKind) return;
     setSending(true);
     setThreadError('');
     try {
@@ -294,9 +296,11 @@ export default function Messages() {
                 {counts.all > 0 ? `${counts.all} unread` : 'All caught up'}
               </p>
             </div>
-            <button type="button" className="btn btn-sm btn-primary" onClick={() => setShowNew((v) => !v)}>
-              {showNew ? 'Close' : 'New chat'}
-            </button>
+            {!demoBuyer && (
+              <button type="button" className="btn btn-sm btn-primary" onClick={() => setShowNew((v) => !v)}>
+                {showNew ? 'Close' : 'New chat'}
+              </button>
+            )}
           </div>
 
           {showNew && (
@@ -353,9 +357,11 @@ export default function Messages() {
             {!listLoading && visibleItems.length === 0 && (
               <li className="msg-list-empty">
                 <p className="muted small">
-                  {items.length === 0
-                    ? 'No messages yet. Start a chat with an agent or another member.'
-                    : 'No conversations match this filter.'}
+                  {demoBuyer
+                    ? 'The sample Google buyer is for browsing only. Messaging is disabled.'
+                    : items.length === 0
+                      ? 'No messages yet. Start a chat with an agent or another member.'
+                      : 'No conversations match this filter.'}
                 </p>
                 {items.length === 0 && (
                   <Link to="/listings" className="btn btn-sm">
@@ -449,18 +455,24 @@ export default function Messages() {
                   })}
                 </div>
 
-                <form className="msg-compose" onSubmit={send}>
-                  <input
-                    value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
-                    placeholder="Type a message..."
-                    maxLength={2000}
-                    aria-label="Message"
-                  />
-                  <button className="btn btn-primary" disabled={sending || !draft.trim()}>
-                    {sending ? 'Sending...' : 'Send'}
-                  </button>
-                </form>
+                {demoBuyer ? (
+                  <p className="alert alert-info msg-alert">
+                    Sample Google buyer accounts cannot send messages or contact agents.
+                  </p>
+                ) : (
+                  <form className="msg-compose" onSubmit={send}>
+                    <input
+                      value={draft}
+                      onChange={(e) => setDraft(e.target.value)}
+                      placeholder="Type a message..."
+                      maxLength={2000}
+                      aria-label="Message"
+                    />
+                    <button className="btn btn-primary" disabled={sending || !draft.trim()}>
+                      {sending ? 'Sending...' : 'Send'}
+                    </button>
+                  </form>
+                )}
               </>
             )
           ) : (
@@ -474,9 +486,15 @@ export default function Messages() {
               <p className="muted">
                 Inquiries and direct chats are now in one place. Select a conversation, or start a new chat.
               </p>
-              <button type="button" className="btn btn-primary" onClick={() => setShowNew(true)}>
-                Start a new chat
-              </button>
+              {demoBuyer ? (
+                <p className="muted small">
+                  Sample Google buyer accounts can browse and save listings, but cannot chat.
+                </p>
+              ) : (
+                <button type="button" className="btn btn-primary" onClick={() => setShowNew(true)}>
+                  Start a new chat
+                </button>
+              )}
             </div>
           )}
         </div>

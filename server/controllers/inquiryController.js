@@ -3,6 +3,11 @@ import Listing from '../models/Listing.js';
 import User from '../models/User.js';
 import sendEmail from '../utils/sendEmail.js';
 import { emitToUser } from '../socket.js';
+import {
+  isDemoBuyer,
+  DEMO_BUYER_BLOCKED,
+  DEMO_BUYER_RECIPIENT_BLOCKED,
+} from '../utils/demo.js';
 
 // Emails the other party. The dev fallback in sendEmail prints it to the server
 // terminal when SMTP is not configured.
@@ -18,6 +23,10 @@ async function notify(recipient, inquiry, listingTitle, fromName, body) {
 
 // POST /api/inquiries  { listingId, message, subject? }
 export const createInquiry = async (req, res) => {
+  if (isDemoBuyer(req.user)) {
+    return res.status(403).json({ message: DEMO_BUYER_BLOCKED });
+  }
+
   const { listingId, message, subject } = req.body;
 
   const listing = await Listing.findById(listingId).populate('agent', 'name email');
@@ -105,6 +114,19 @@ export const replyToInquiry = async (req, res) => {
   const isAgent = inquiry.agent.toString() === uid;
   const isUser = inquiry.user.toString() === uid;
   if (!isAgent && !isUser) return res.status(403).json({ message: 'You are not part of this conversation' });
+
+  if (isDemoBuyer(req.user)) {
+    return res.status(403).json({ message: DEMO_BUYER_BLOCKED });
+  }
+
+  // Agents cannot keep a conversation alive with the browsing-only sample
+  // buyer either, so the restriction cannot be bypassed from the other side.
+  if (isAgent) {
+    const buyer = await User.findById(inquiry.user).select('role email googleId');
+    if (isDemoBuyer(buyer)) {
+      return res.status(403).json({ message: DEMO_BUYER_RECIPIENT_BLOCKED });
+    }
+  }
 
   // Build the message, snapshotting the quoted one when quotedId is given.
   const message = { sender: req.user._id, body: req.body.message };

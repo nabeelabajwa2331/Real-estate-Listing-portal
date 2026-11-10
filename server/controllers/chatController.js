@@ -2,6 +2,14 @@ import Conversation from '../models/Conversation.js';
 import User from '../models/User.js';
 import { emitToUser } from '../socket.js';
 import { escapeRegex } from '../utils/query.js';
+import {
+  isDemoBuyer,
+  demoBuyerQuery,
+  DEMO_BUYER_EMAIL,
+  DEMO_BUYER_GOOGLE_ID,
+  DEMO_BUYER_BLOCKED,
+  DEMO_BUYER_RECIPIENT_BLOCKED,
+} from '../utils/demo.js';
 
 const publicUser = (u) => ({
   id: u._id,
@@ -41,6 +49,10 @@ export const getConversations = async (req, res) => {
 
 // POST /api/chat/conversations  { userId }
 export const startConversation = async (req, res) => {
+  if (isDemoBuyer(req.user)) {
+    return res.status(403).json({ message: DEMO_BUYER_BLOCKED });
+  }
+
   const { userId } = req.body;
   if (userId === req.user._id.toString()) {
     return res.status(400).json({ message: 'You cannot start a chat with yourself' });
@@ -48,6 +60,9 @@ export const startConversation = async (req, res) => {
 
   const other = await User.findById(userId);
   if (!other || !other.isActive) return res.status(404).json({ message: 'User not found' });
+  if (isDemoBuyer(other)) {
+    return res.status(403).json({ message: DEMO_BUYER_RECIPIENT_BLOCKED });
+  }
 
   let conversation = await Conversation.findOne({
     participants: { $all: [req.user._id, other._id], $size: 2 },
@@ -100,12 +115,26 @@ export const getConversation = async (req, res) => {
 
 // POST /api/chat/conversations/:id/messages  { body }
 export const sendMessage = async (req, res) => {
+  if (isDemoBuyer(req.user)) {
+    return res.status(403).json({ message: DEMO_BUYER_BLOCKED });
+  }
+
   const uid = req.user._id;
   const conversation = await Conversation.findById(req.params.id);
   if (!conversation) return res.status(404).json({ message: 'Conversation not found' });
 
   const isMember = conversation.participants.some((p) => p.toString() === uid.toString());
   if (!isMember) return res.status(403).json({ message: 'You are not part of this conversation' });
+
+  // Keep any existing conversation with the sample buyer read-only for the
+  // agent as well, so neither side can chat with it.
+  const demoParticipant = await User.exists({
+    _id: { $in: conversation.participants },
+    ...demoBuyerQuery,
+  });
+  if (demoParticipant) {
+    return res.status(403).json({ message: DEMO_BUYER_RECIPIENT_BLOCKED });
+  }
 
   await Conversation.updateOne(
     { _id: conversation._id },
@@ -143,6 +172,8 @@ export const getUnreadCount = async (req, res) => {
 
 // GET /api/chat/users?q=  (people you can start a chat with)
 export const searchUsers = async (req, res) => {
+  if (isDemoBuyer(req.user)) return res.json({ users: [] });
+
   const q = String(req.query.q || '').trim();
   if (q.length < 2) return res.json({ users: [] });
 
@@ -151,6 +182,8 @@ export const searchUsers = async (req, res) => {
     _id: { $ne: req.user._id },
     isActive: true,
     $or: [{ name: rx }, { email: rx }],
+    // Don't advertise the browsing-only sample buyer as a chat target.
+    $nor: [{ googleId: DEMO_BUYER_GOOGLE_ID }, { email: DEMO_BUYER_EMAIL }],
   })
     .limit(10)
     .select('name role avatar');
