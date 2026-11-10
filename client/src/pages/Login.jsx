@@ -6,7 +6,7 @@ import GoogleAuthButton from '../components/GoogleAuthButton.jsx';
 import { useAuth, homeForRole } from '../context/AuthContext.jsx';
 
 export default function Login() {
-  const { user, login, loginWithGoogle } = useAuth();
+  const { user, login, loginWithGoogle, loginWithGoogleDemo } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   // Keep the full destination (including filters) so a direct saved-items URL
@@ -32,6 +32,20 @@ export default function Login() {
     setGoogleBusy(true);
     try {
       const signedIn = await loginWithGoogle(credential);
+      navigate(from || homeForRole(signedIn.role), { replace: true });
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setGoogleBusy(false);
+    }
+  };
+
+  const onDemo = async () => {
+    setError('');
+    setNotice('');
+    setGoogleBusy(true);
+    try {
+      const signedIn = await loginWithGoogleDemo();
       navigate(from || homeForRole(signedIn.role), { replace: true });
     } catch (err) {
       setError(errorMessage(err));
@@ -86,7 +100,7 @@ export default function Login() {
         </div>
       }
     >
-      <GoogleAuthButton onCredential={onGoogle} onError={setError} />
+      <GoogleAuthButton onCredential={onGoogle} onDemo={onDemo} onError={setError} />
       <div className="auth-divider">
         <span>or sign in with email</span>
       </div>

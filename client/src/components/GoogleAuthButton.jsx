@@ -222,7 +222,6 @@ export default function GoogleAuthButton({ onCredential, onError, onDemo }) {
       >
         <GoogleIcon />
         Continue with Google
-        <span className="google-demo-pill">Demo</span>
       </button>
     );
   }

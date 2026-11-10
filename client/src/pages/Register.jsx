@@ -14,7 +14,7 @@ import {
 const empty = { name: '', email: '', phone: '', password: '', confirm: '', role: 'user' };
 
 export default function Register() {
-  const { user, register, loginWithGoogle } = useAuth();
+  const { user, register, loginWithGoogle, loginWithGoogleDemo } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState(empty);
   const [error, setError] = useState('');
@@ -41,6 +41,19 @@ export default function Register() {
     setGoogleBusy(true);
     try {
       const signedIn = await loginWithGoogle(credential, form.role);
+      navigate(homeForRole(signedIn.role), { replace: true });
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setGoogleBusy(false);
+    }
+  };
+
+  const onDemo = async () => {
+    setError('');
+    setGoogleBusy(true);
+    try {
+      const signedIn = await loginWithGoogleDemo(form.role);
       navigate(homeForRole(signedIn.role), { replace: true });
     } catch (err) {
       setError(errorMessage(err));
@@ -104,7 +117,7 @@ export default function Register() {
         </>
       }
     >
-      <GoogleAuthButton onCredential={onGoogle} onError={setError} />
+      <GoogleAuthButton onCredential={onGoogle} onDemo={onDemo} onError={setError} />
       <div className="auth-divider">
         <span>or sign up with email</span>
       </div>
