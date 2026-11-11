@@ -222,12 +222,8 @@ export default function GoogleAuthButton({ onCredential, onError, onDemo }) {
           }
         >
           <GoogleIcon />
-          Continue with Google (demo)
+          Continue with Google
         </button>
-        <p className="muted small google-demo-note">
-          Demo mode: opens a read-only sample buyer account. No real Google account is used and
-          the sample account cannot contact agents.
-        </p>
       </div>
     );
   }
