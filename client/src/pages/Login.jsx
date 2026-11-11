@@ -1,19 +1,25 @@
 import { useState } from 'react';
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import api, { errorMessage } from '../api/axios.js';
 import AuthShell from '../components/AuthShell.jsx';
 import GoogleAuthButton from '../components/GoogleAuthButton.jsx';
 import { useAuth, homeForRole } from '../context/AuthContext.jsx';
+import { locationToPath, registerPath, safeNextPath } from '../utils/redirect.js';
+import { useTitle } from '../utils/useTitle.js';
 
 export default function Login() {
   const { user, login, loginWithGoogle, loginWithGoogleDemo } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  useTitle('Sign in');
+
   // Keep the full destination (including filters) so a direct saved-items URL
-  // or a deep link returns the user to exactly where they were going.
-  const from = location.state?.from
-    ? `${location.state.from.pathname}${location.state.from.search || ''}${location.state.from.hash || ''}`
-    : null;
+  // or a deep link returns the user to exactly where they were going. The
+  // ?next= value is validated against open redirects; the older state.from
+  // flow is still honoured for bookmarks created before this change.
+  const from =
+    safeNextPath(searchParams.get('next')) || safeNextPath(locationToPath(location.state?.from));
 
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
@@ -92,7 +98,7 @@ export default function Login() {
       footer={
         <div className="auth-panel-foot-row">
           <span>
-            No account yet? <Link to="/register">Create one</Link>
+            No account yet? <Link to={registerPath(from)}>Create one</Link>
           </span>
           <Link to="/forgot-password" className="auth-action-link">
             Forgot password?

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import Avatar from './Avatar.jsx';
-import { useAuth } from '../context/AuthContext.jsx';
+import { useAuth, homeForRole } from '../context/AuthContext.jsx';
 import { useFavorites } from '../context/FavoritesContext.jsx';
 import { useInquiries } from '../context/InquiryContext.jsx';
 import { useChat } from '../context/ChatContext.jsx';
@@ -62,7 +62,7 @@ const icons = {
 // The primary destination belongs to the role. Admins land on the admin
 // dashboard; members and agents keep their own workspace entry points.
 const dashboardLink = {
-  admin: { to: '/admin', label: 'Admin dashboard', icon: icons.shield },
+  admin: { to: '/admin', label: 'Dashboard', icon: icons.shield },
   agent: { to: '/agent', label: 'My listings', icon: icons.building },
   user: { to: '/dashboard', label: 'Dashboard', icon: icons.grid },
 };
@@ -164,7 +164,7 @@ export default function Navbar() {
               </NavLink>
             )}
 
-            {!loading && user && (
+            {!loading && user && user.role !== 'admin' && (
               <NavLink
                 to="/dashboard/saved"
                 className="app-nav-link"
@@ -176,7 +176,7 @@ export default function Navbar() {
               </NavLink>
             )}
 
-            {!loading && user && (
+            {!loading && user && user.role !== 'admin' && (
               <NavLink to="/messages" className="app-nav-link" onClick={() => setMenuOpen(false)}>
                 <span className="app-nav-icon">{icons.message}</span>
                 Messages
@@ -185,7 +185,11 @@ export default function Navbar() {
             )}
 
             {!loading && user?.role === 'agent' && (
-              <NavLink to="/dashboard" className="app-nav-link" onClick={() => setMenuOpen(false)}>
+              <NavLink
+                to={homeForRole(user.role)}
+                className="app-nav-link"
+                onClick={() => setMenuOpen(false)}
+              >
                 Dashboard
               </NavLink>
             )}

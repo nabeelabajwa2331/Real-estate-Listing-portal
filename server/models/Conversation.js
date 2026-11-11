@@ -16,6 +16,9 @@ const conversationSchema = new mongoose.Schema(
       index: true,
     },
     messages: { type: [chatMessageSchema], default: [] },
+    // Optional context: the listing a direct chat was started from. The same
+    // two people keep one thread; this records what it was originally about.
+    listing: { type: mongoose.Schema.Types.ObjectId, ref: 'Listing' },
     lastMessageAt: { type: Date, default: Date.now, index: true },
   },
   { timestamps: true }

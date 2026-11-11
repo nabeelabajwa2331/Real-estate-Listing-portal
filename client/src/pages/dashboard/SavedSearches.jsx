@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import ConfirmDialog from '../../components/ConfirmDialog.jsx';
 import { useSavedSearches } from '../../context/SavedSearchesContext.jsx';
 import { searchSummary, searchQueryString } from '../../utils/search.js';
 
@@ -14,17 +15,19 @@ export default function SavedSearches() {
   const navigate = useNavigate();
   const { searches, count, loaded, error, remove, refresh } = useSavedSearches();
   const [busyId, setBusyId] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   const run = (search) => {
     const qs = searchQueryString(search.params);
     navigate(qs ? `/listings?${qs}` : '/listings');
   };
 
-  const onRemove = async (search) => {
-    if (!window.confirm(`Delete "${search.name}"?`)) return;
-    setBusyId(search._id);
-    await remove(search._id);
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    setBusyId(pendingDelete._id);
+    await remove(pendingDelete._id);
     setBusyId(null);
+    setPendingDelete(null);
   };
 
   return (
@@ -86,7 +89,7 @@ export default function SavedSearches() {
                   type="button"
                   className="btn btn-sm btn-danger"
                   disabled={busyId === search._id}
-                  onClick={() => onRemove(search)}
+                  onClick={() => setPendingDelete(search)}
                 >
                   {busyId === search._id ? 'Deleting...' : 'Delete'}
                 </button>
@@ -95,6 +98,21 @@ export default function SavedSearches() {
           ))}
         </ul>
       )}
+
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        title="Delete saved search?"
+        description={
+          pendingDelete
+            ? `"${pendingDelete.name}" will be removed from your dashboard. This cannot be undone.`
+            : undefined
+        }
+        confirmLabel="Delete"
+        danger
+        busy={busyId === pendingDelete?._id}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

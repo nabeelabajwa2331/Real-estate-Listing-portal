@@ -1,6 +1,7 @@
 import Listing from '../models/Listing.js';
 import User from '../models/User.js';
 import { getIO, getOnlineCount, isUserOnline } from '../socket.js';
+import { listingCompletenessError } from '../utils/listingCompleteness.js';
 
 const adminUser = (u) => ({
   id: u._id,
@@ -33,6 +34,16 @@ export const getListingsForReview = async (req, res) => {
 export const approveListing = async (req, res) => {
   const listing = await Listing.findById(req.params.id);
   if (!listing) return res.status(404).json({ message: 'Listing not found' });
+
+  // Never publish a record that buyers cannot locate or inspect.
+  const incomplete = listingCompletenessError({
+    address: listing.address,
+    location: listing.location,
+    images: listing.images,
+  });
+  if (incomplete) {
+    return res.status(400).json({ message: `Cannot approve: ${incomplete.toLowerCase()}` });
+  }
 
   listing.status = 'approved';
   listing.rejectionReason = undefined;

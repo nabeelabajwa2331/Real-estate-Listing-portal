@@ -211,18 +211,24 @@ export default function GoogleAuthButton({ onCredential, onError, onDemo }) {
   // No real client ID, but the API offers the sample-account demo fallback.
   if (!clientId && demoAvailable) {
     return (
-      <button
-        type="button"
-        className="btn google-btn"
-        onClick={() =>
-          demoRef.current
-            ? demoRef.current()
-            : errorRef.current?.('Google demo sign-in is unavailable on this page.')
-        }
-      >
-        <GoogleIcon />
-        Continue with Google
-      </button>
+      <div className="google-demo">
+        <button
+          type="button"
+          className="btn google-btn"
+          onClick={() =>
+            demoRef.current
+              ? demoRef.current()
+              : errorRef.current?.('Google demo sign-in is unavailable on this page.')
+          }
+        >
+          <GoogleIcon />
+          Continue with Google (demo)
+        </button>
+        <p className="muted small google-demo-note">
+          Demo mode: opens a read-only sample buyer account. No real Google account is used and
+          the sample account cannot contact agents.
+        </p>
+      </div>
     );
   }
 

@@ -72,12 +72,15 @@ export default function App() {
 
             {/* Saved items are member-facing for every signed-in account.
                 The canonical URL is /dashboard/saved; the old /dashboard/favorites
-                path and top-level /saved aliases stay valid for bookmarks. */}
-            <Route path="/dashboard" element={<DashboardLayout />}>
-              <Route index element={<Overview />} />
-              <Route path="saved" element={<Favorites />} />
-              <Route path="favorites" element={<Navigate to="/dashboard/saved" replace />} />
-              <Route path="searches" element={<SavedSearches />} />
+                path and top-level /saved aliases stay valid for bookmarks.
+                Admins are redirected to their own workspace. */}
+            <Route element={<RoleRoute roles={['user', 'agent']} />}>
+              <Route path="/dashboard" element={<DashboardLayout />}>
+                <Route index element={<Overview />} />
+                <Route path="saved" element={<Favorites />} />
+                <Route path="favorites" element={<Navigate to="/dashboard/saved" replace />} />
+                <Route path="searches" element={<SavedSearches />} />
+              </Route>
             </Route>
           </Route>
 
@@ -95,7 +98,10 @@ export default function App() {
               guard, so typing the URL directly cannot open the dashboard. */}
           <Route element={<RoleRoute roles={['admin']} />}>
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/properties" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<AdminDashboard />} />
+            <Route path="/admin/agents" element={<AdminDashboard />} />
+            <Route path="/admin/messages" element={<AdminDashboard />} />
             <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
           </Route>
 

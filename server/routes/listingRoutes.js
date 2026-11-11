@@ -30,6 +30,7 @@ const rules = [
   body('area').optional({ values: 'falsy' }).isFloat({ min: 0 }).withMessage('Enter a valid area'),
   body('bedrooms').optional({ values: 'falsy' }).isInt({ min: 0 }).withMessage('Enter a valid number of bedrooms'),
   body('bathrooms').optional({ values: 'falsy' }).isInt({ min: 0 }).withMessage('Enter a valid number of bathrooms'),
+  body('street').trim().notEmpty().withMessage('Enter the street address'),
   body('city').trim().notEmpty().withMessage('Enter the city'),
   body('lat').optional({ values: 'falsy' }).isFloat({ min: -90, max: 90 }).withMessage('Latitude must be between -90 and 90'),
   body('lng').optional({ values: 'falsy' }).isFloat({ min: -180, max: 180 }).withMessage('Longitude must be between -180 and 180'),
@@ -37,8 +38,8 @@ const rules = [
 
 const id = () => param('id').isMongoId().withMessage('Invalid listing');
 
-// Browsing the catalogue is a member feature. Shared detail links stay public
-// for guests, but they only receive the photos from getListing below.
+// Browsing the catalogue requires an account. A shared detail link still opens
+// for guests, but only the photos are returned (see getListing).
 router.get('/', protect, getListings);
 
 // The signed-in agent's own listings. Must come before '/:id'.

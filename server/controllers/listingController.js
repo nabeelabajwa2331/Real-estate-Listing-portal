@@ -1,7 +1,10 @@
 import Listing from '../models/Listing.js';
+import ListingView from '../models/ListingView.js';
 import User from '../models/User.js';
 import { uploadImages, deleteImage } from '../utils/upload.js';
 import { escapeRegex } from '../utils/query.js';
+import { viewerKey } from '../utils/viewer.js';
+import { listingCompletenessError } from '../utils/listingCompleteness.js';
 
 const toNumber = (value) => {
   if (value === undefined || value === null || value === '') return undefined;
@@ -85,6 +88,19 @@ export const createListing = async (req, res) => {
   const payload = buildPayload(req.body);
   const images = await uploadImages(req.files);
 
+  // A public listing must be complete: street + city, map coordinates and at
+  // least one photo. Uploaded files are removed again when the check fails so
+  // an invalid submission never leaves orphaned images behind.
+  const incomplete = listingCompletenessError({
+    address: payload.address,
+    location: payload.location,
+    images,
+  });
+  if (incomplete) {
+    await Promise.all(images.map(deleteImage));
+    return res.status(400).json({ message: incomplete });
+  }
+
   const listing = await Listing.create({ ...payload, images, agent: req.user._id });
   res.status(201).json({ listing, message: 'Listing created' });
 };
@@ -164,11 +180,12 @@ export const getMyListings = async (req, res) => {
   res.json({ listings });
 };
 
-// GET /api/listings/:id  (public, but pending/rejected listings are only
-// visible to their owner or an admin)
+// GET /api/listings/:id  (shared links stay public for guests, but only the
+// photos are returned; pending/rejected listings are visible only to their
+// owner or an admin)
 export const getListing = async (req, res) => {
-  // Guests can read the listing, but the agent's phone and email are private:
-  // they are only populated for signed-in users.
+  // The agent's phone and email are private and only populated for signed-in
+  // users.
   const agentFields = req.user ? 'name phone email avatar createdAt' : 'name avatar createdAt';
   const listing = await Listing.findById(req.params.id).populate('agent', agentFields);
   if (!listing) return res.status(404).json({ message: 'Listing not found' });
@@ -179,11 +196,20 @@ export const getListing = async (req, res) => {
     return res.status(404).json({ message: 'Listing not found' });
   }
 
-  listing.views += 1;
-  await listing.save();
+  // Count at most one view per viewer per listing per day. The unique index on
+  // (listing, viewerKey) rejects a duplicate; the TTL index expires the row
+  // after 24 hours. A raw IP address is never stored, only a salted hash.
+  const key = viewerKey({ userId: req.user?._id, ip: req.ip });
+  try {
+    await ListingView.create({ listing: listing._id, viewerKey: key });
+    await Listing.updateOne({ _id: listing._id }, { $inc: { views: 1 } });
+    listing.views += 1;
+  } catch (err) {
+    if (err?.code !== 11000) console.error('Could not record listing view:', err.message);
+  }
 
-  // Visitors who are not signed in only get the photos. Everything else
-  // (price, address, description, agent contact) requires an account.
+  // Visitors who are not signed in only get the photos. Price, address,
+  // description and the agent's contact details require an account.
   if (!req.user) {
     return res.json({
       listing: {
@@ -219,7 +245,21 @@ export const updateListing = async (req, res) => {
 
   const { keep, removed } = splitImages(listing.images, req.body.removeImages);
   const added = await uploadImages(req.files);
-  listing.images = [...keep, ...added];
+  const nextImages = [...keep, ...added];
+
+  // Edits must leave the listing complete too. Validate before removing the
+  // old photos so a rejected save never destroys the current images.
+  const incomplete = listingCompletenessError({
+    address: listing.address,
+    location: listing.location,
+    images: nextImages,
+  });
+  if (incomplete) {
+    await Promise.all(added.map(deleteImage));
+    return res.status(400).json({ message: incomplete });
+  }
+
+  listing.images = nextImages;
   await Promise.all(removed.map(deleteImage));
 
   await listing.save();

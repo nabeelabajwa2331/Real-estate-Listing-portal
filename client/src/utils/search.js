@@ -32,3 +32,36 @@ export function searchQueryString(params = {}) {
   }
   return qs.toString();
 }
+
+const RANGES = [
+  ['minPrice', 'maxPrice', 'price'],
+  ['minArea', 'maxArea', 'area'],
+];
+
+// Validates the numeric filter fields before a request is sent. Returns an
+// error message, or an empty string when the filters are usable.
+export function validateSearchFilters(filters = {}) {
+  for (const [key, label] of [
+    ['minPrice', 'Minimum price'],
+    ['maxPrice', 'Maximum price'],
+    ['minArea', 'Minimum area'],
+    ['maxArea', 'Maximum area'],
+    ['bedrooms', 'Bedrooms'],
+  ]) {
+    const raw = filters[key];
+    if (raw === '' || raw === undefined || raw === null) continue;
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value < 0) {
+      return `${label} must be a number of 0 or more.`;
+    }
+  }
+
+  for (const [minKey, maxKey, label] of RANGES) {
+    if (filters[minKey] === '' || filters[maxKey] === '') continue;
+    if (Number(filters[minKey]) > Number(filters[maxKey])) {
+      return `The minimum ${label} cannot be greater than the maximum ${label}.`;
+    }
+  }
+
+  return '';
+}

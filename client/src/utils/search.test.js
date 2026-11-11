@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { searchSummary, searchQueryString } from './search.js';
+import { searchSummary, searchQueryString, validateSearchFilters } from './search.js';
 
 describe('searchSummary', () => {
   it('summarises the main filters', () => {
@@ -17,6 +17,23 @@ describe('searchSummary', () => {
 
   it('falls back to a generic label', () => {
     expect(searchSummary({})).toBe('All listings');
+  });
+});
+
+describe('validateSearchFilters', () => {
+  it('accepts empty and valid numeric filters', () => {
+    expect(validateSearchFilters({})).toBe('');
+    expect(validateSearchFilters({ minPrice: '100', maxPrice: '500', bedrooms: '2' })).toBe('');
+  });
+
+  it('rejects negative or non-numeric values', () => {
+    expect(validateSearchFilters({ minPrice: '-1' })).toMatch(/Minimum price/);
+    expect(validateSearchFilters({ bedrooms: 'abc' })).toMatch(/Bedrooms/);
+  });
+
+  it('rejects inverted ranges', () => {
+    expect(validateSearchFilters({ minPrice: '500', maxPrice: '100' })).toMatch(/price/);
+    expect(validateSearchFilters({ minArea: '2000', maxArea: '1000' })).toMatch(/area/);
   });
 });
 

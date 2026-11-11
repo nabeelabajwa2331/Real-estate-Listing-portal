@@ -7,11 +7,9 @@ import { useSavedSearches } from '../../context/SavedSearchesContext.jsx';
 import { useInquiries } from '../../context/InquiryContext.jsx';
 import { useChat } from '../../context/ChatContext.jsx';
 
-// The dashboard (saved items + saved searches) is open to every signed-in
-// account, so label the account by its real role rather than assuming buyer.
-const roleLabel = { admin: 'Administrator', agent: 'Agent', user: 'Buyer / renter' };
-const roleHome = { admin: '/admin', agent: '/agent' };
-const roleHomeLabel = { admin: 'Admin dashboard', agent: 'My listings' };
+const roleLabel = { agent: 'Agent', user: 'Buyer / renter' };
+const roleHome = { agent: '/agent' };
+const roleHomeLabel = { agent: 'My listings' };
 
 const iconProps = {
   width: 18,
@@ -61,12 +59,6 @@ const icons = {
     <svg {...iconProps}>
       <circle cx="12" cy="8" r="3.5" />
       <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
-    </svg>
-  ),
-  shield: (
-    <svg {...iconProps}>
-      <path d="M12 2l7 4v6c0 5-3 8-7 10-4-2-7-5-7-10V6z" />
-      <path d="m9 12 2 2 4-4" />
     </svg>
   ),
   building: (
@@ -189,9 +181,7 @@ export default function DashboardLayout() {
           </NavLink>
           {roleHome[user.role] && (
             <NavLink to={roleHome[user.role]} className="dash-nav-link">
-              <span className="dash-nav-icon">
-                {user.role === 'admin' ? icons.shield : icons.building}
-              </span>
+              <span className="dash-nav-icon">{icons.building}</span>
               <span className="dash-nav-text">{roleHomeLabel[user.role]}</span>
             </NavLink>
           )}

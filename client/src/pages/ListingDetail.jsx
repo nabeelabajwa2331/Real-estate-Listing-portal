@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import api, { errorMessage } from '../api/axios.js';
 import ImageGallery from '../components/ImageGallery.jsx';
 import { formatPrice, propertyLabel } from '../components/ListingCard.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFavorites } from '../context/FavoritesContext.jsx';
+import { locationToPath, loginPath, registerPath } from '../utils/redirect.js';
+import { useTitle } from '../utils/useTitle.js';
 
 const statusLabel = { pending: 'Pending review', approved: 'Approved', rejected: 'Rejected' };
 
@@ -13,6 +15,7 @@ export default function ListingDetail() {
   const { user, loading: authLoading } = useAuth();
   const favorites = useFavorites();
   const navigate = useNavigate();
+  const location = useLocation();
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -21,6 +24,9 @@ export default function ListingDetail() {
   const [inquiryNotice, setInquiryNotice] = useState('');
   const [inquiryError, setInquiryError] = useState('');
   const [favoriteError, setFavoriteError] = useState('');
+  useTitle(listing?.title || 'Property listing');
+
+  const nextPath = locationToPath(location);
 
   useEffect(() => {
     let active = true;
@@ -73,14 +79,10 @@ export default function ListingDetail() {
             agent&apos;s contact details — or create an account in a few seconds.
           </p>
           <div className="guest-lock-actions">
-            <Link
-              to="/login"
-              state={{ from: { pathname: `/listings/${listing._id}` } }}
-              className="btn btn-primary btn-lg"
-            >
+            <Link to={loginPath(nextPath)} className="btn btn-primary btn-lg">
               Sign in
             </Link>
-            <Link to="/register" className="btn btn-lg">
+            <Link to={registerPath(nextPath)} className="btn btn-lg">
               Create an account
             </Link>
           </div>
@@ -117,15 +119,20 @@ export default function ListingDetail() {
     if (!ok) setFavoriteError('Could not update saved items. Please try again.');
   };
 
-  const startChat = async () => {
-    if (demoBuyer) return;
-    setInquiryError('');
-    try {
-      const { data } = await api.post('/chat/conversations', { userId: agent._id });
-      navigate(`/chat/${data.conversation.id}`);
-    } catch (err) {
-      setInquiryError(errorMessage(err));
+  // Opening the composer must not create an empty conversation. The thread is
+  // created by the first message sent from the Messages page, with this listing
+  // attached as context.
+  const startChat = () => {
+    if (!user) {
+      navigate(loginPath(nextPath));
+      return;
     }
+    if (demoBuyer || !agent?._id) return;
+
+    const params = new URLSearchParams({ to: agent._id, listing: listing._id });
+    if (agent.name) params.set('name', agent.name);
+    if (listing.title) params.set('listingTitle', listing.title);
+    navigate(`/messages?${params.toString()}`);
   };
   const address = listing.address || {};
   const addressLine = [address.street, address.city, address.state, address.zip].filter(Boolean).join(', ');

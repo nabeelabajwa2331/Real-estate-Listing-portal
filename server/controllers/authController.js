@@ -5,7 +5,7 @@ import PendingUser from '../models/PendingUser.js';
 import sendEmail from '../utils/sendEmail.js';
 import { uploadImages, deleteImage } from '../utils/upload.js';
 import { normalizePakistaniPhone } from '../utils/phone.js';
-import { isDemoBuyer } from '../utils/demo.js';
+import { isDemoBuyer, DEMO_BUYER_EMAIL, DEMO_BUYER_GOOGLE_ID } from '../utils/demo.js';
 import {
   sendTokenCookie,
   clearTokenCookie,
@@ -243,38 +243,43 @@ export const googleConfig = (req, res) => {
 
 // POST /api/auth/google/demo
 // Signs into a fixed sample account so the "Continue with Google" option can be
-// exercised without a Google Cloud project. Never available once a real client
-// ID is set, and can be disabled with GOOGLE_DEMO_LOGIN=false.
+// exercised without a Google Cloud project. It is deliberately buyer-only and
+// read-only: it can never create or sign into an agent account. Never available
+// once a real client ID is set, and can be disabled with GOOGLE_DEMO_LOGIN=false.
 export const googleDemoLogin = async (req, res) => {
   if (!googleDemoEnabled()) {
     return res.status(503).json({ message: 'Google demo sign-in is disabled' });
   }
 
-  const role = req.body?.role === 'agent' ? 'agent' : 'user';
-  const email = role === 'agent' ? 'demo.google.agent@example.com' : 'demo.google@example.com';
-  const googleId = role === 'agent' ? 'demo-google-agent' : 'demo-google-user';
-
-  let user = await User.findOne({ $or: [{ googleId }, { email }] });
+  let user = await User.findOne({
+    $or: [{ googleId: DEMO_BUYER_GOOGLE_ID }, { email: DEMO_BUYER_EMAIL }],
+  });
 
   if (!user) {
     user = await User.create({
-      name: role === 'agent' ? 'Demo Google Agent' : 'Demo Google Buyer',
-      email,
+      name: 'Demo Google Buyer',
+      email: DEMO_BUYER_EMAIL,
       phone: '',
       // Same approach as a real Google account: a random password nobody knows.
       password: crypto.randomBytes(32).toString('hex'),
-      role,
+      role: 'user',
       isVerified: true,
-      googleId,
+      googleId: DEMO_BUYER_GOOGLE_ID,
     });
   } else {
     if (!user.isActive) {
       return res.status(403).json({ message: 'This demo account has been deactivated' });
     }
 
+    // Defensive: an older deployment may have created this address with the
+    // agent role. Force it back to the read-only buyer identity.
     let changed = false;
+    if (user.role !== 'user') {
+      user.role = 'user';
+      changed = true;
+    }
     if (!user.googleId) {
-      user.googleId = googleId;
+      user.googleId = DEMO_BUYER_GOOGLE_ID;
       changed = true;
     }
     if (!user.isVerified) {

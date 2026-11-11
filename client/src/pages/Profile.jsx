@@ -10,6 +10,7 @@ import {
   toNationalPhone,
   PHONE_MESSAGE,
 } from '../utils/phone.js';
+import { useTitle } from '../utils/useTitle.js';
 
 const roleLabel = { admin: 'Administrator', agent: 'Agent', user: 'Buyer / renter' };
 
@@ -60,11 +61,13 @@ const icons = {
 
 export default function Profile() {
   const { user, updateProfile, updateAvatar, removeAvatar } = useAuth();
+  useTitle('My profile');
   const [form, setForm] = useState({
     name: user.name || '',
     phone: formatNationalPhone(toNationalPhone(user.phone || '')),
     currentPassword: '',
     newPassword: '',
+    confirmPassword: '',
   });
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -120,10 +123,15 @@ export default function Profile() {
       setError(PHONE_MESSAGE);
       return;
     }
+    if (form.newPassword && form.newPassword !== form.confirmPassword) {
+      setError('The two new passwords do not match.');
+      return;
+    }
     setBusy(true);
     try {
-      setNotice(await updateProfile({ ...form, phone: normalizePakistaniPhone(form.phone) }));
-      setForm((f) => ({ ...f, currentPassword: '', newPassword: '' }));
+      const { confirmPassword, ...payload } = form;
+      setNotice(await updateProfile({ ...payload, phone: normalizePakistaniPhone(form.phone) }));
+      setForm((f) => ({ ...f, currentPassword: '', newPassword: '', confirmPassword: '' }));
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -264,6 +272,17 @@ export default function Profile() {
                   type="password"
                   name="newPassword"
                   value={form.newPassword}
+                  onChange={onChange}
+                  minLength={8}
+                  autoComplete="new-password"
+                />
+              </label>
+              <label>
+                Confirm new password
+                <input
+                  type="password"
+                  name="confirmPassword"
+                  value={form.confirmPassword}
                   onChange={onChange}
                   minLength={8}
                   autoComplete="new-password"

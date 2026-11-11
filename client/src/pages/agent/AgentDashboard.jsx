@@ -1,19 +1,23 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api, { errorMessage } from '../../api/axios.js';
+import ConfirmDialog from '../../components/ConfirmDialog.jsx';
 import { formatPrice, propertyLabel } from '../../components/ListingCard.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useInquiries } from '../../context/InquiryContext.jsx';
+import { useTitle } from '../../utils/useTitle.js';
 
 const statusLabel = { pending: 'Pending', approved: 'Approved', rejected: 'Rejected' };
 
 export default function AgentDashboard() {
   const { user } = useAuth();
   const { unread } = useInquiries();
+  useTitle('My listings');
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -32,13 +36,15 @@ export default function AgentDashboard() {
     load();
   }, []);
 
-  const remove = async (listing) => {
-    if (!window.confirm(`Delete "${listing.title}"? This cannot be undone.`)) return;
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    const listing = pendingDelete;
     setBusyId(listing._id);
     setError('');
     try {
       await api.delete(`/listings/${listing._id}`);
       setListings((items) => items.filter((item) => item._id !== listing._id));
+      setPendingDelete(null);
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -117,7 +123,7 @@ export default function AgentDashboard() {
                       type="button"
                       className="btn btn-sm btn-danger"
                       disabled={busyId === listing._id}
-                      onClick={() => remove(listing)}
+                      onClick={() => setPendingDelete(listing)}
                     >
                       {busyId === listing._id ? 'Deleting...' : 'Delete'}
                     </button>
@@ -128,6 +134,21 @@ export default function AgentDashboard() {
           </table>
         </div>
       )}
+
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        title="Delete listing?"
+        description={
+          pendingDelete
+            ? `"${pendingDelete.title}" and its photos will be permanently removed.`
+            : undefined
+        }
+        confirmLabel="Delete listing"
+        danger
+        busy={busyId === pendingDelete?._id}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={confirmDelete}
+      />
     </section>
   );
 }

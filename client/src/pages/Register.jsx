@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { errorMessage } from '../api/axios.js';
 import AuthShell from '../components/AuthShell.jsx';
 import GoogleAuthButton from '../components/GoogleAuthButton.jsx';
 import { useAuth, homeForRole } from '../context/AuthContext.jsx';
+import { locationToPath, loginPath, safeNextPath } from '../utils/redirect.js';
+import { useTitle } from '../utils/useTitle.js';
 import {
   formatNationalPhone,
   isValidNationalPhone,
@@ -16,6 +18,13 @@ const empty = { name: '', email: '', phone: '', password: '', confirm: '', role:
 export default function Register() {
   const { user, register, loginWithGoogle, loginWithGoogleDemo } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  useTitle('Create your account');
+
+  const from =
+    safeNextPath(searchParams.get('next')) || safeNextPath(locationToPath(location.state?.from));
+
   const [form, setForm] = useState(empty);
   const [error, setError] = useState('');
   const [done, setDone] = useState('');
@@ -24,7 +33,7 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [phoneError, setPhoneError] = useState('');
 
-  if (user) return <Navigate to={homeForRole(user.role)} replace />;
+  if (user) return <Navigate to={from || homeForRole(user.role)} replace />;
 
   const onChange = (e) => {
     const { name, value } = e.target;
@@ -41,7 +50,7 @@ export default function Register() {
     setGoogleBusy(true);
     try {
       const signedIn = await loginWithGoogle(credential, form.role);
-      navigate(homeForRole(signedIn.role), { replace: true });
+      navigate(from || homeForRole(signedIn.role), { replace: true });
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -54,7 +63,7 @@ export default function Register() {
     setGoogleBusy(true);
     try {
       const signedIn = await loginWithGoogleDemo(form.role);
-      navigate(homeForRole(signedIn.role), { replace: true });
+      navigate(from || homeForRole(signedIn.role), { replace: true });
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -96,7 +105,7 @@ export default function Register() {
       >
         <div className="auth-success">
           <p className="alert alert-success">{done}</p>
-          <Link to="/login" className="btn btn-primary btn-lg">
+          <Link to={loginPath(from)} className="btn btn-primary btn-lg">
             Go to sign in
           </Link>
         </div>
@@ -113,7 +122,7 @@ export default function Register() {
       asideText="Search verified homes, save the ones you love and talk directly to the agent — without the noise."
       footer={
         <>
-          Already registered? <Link to="/login">Sign in</Link>
+          Already registered? <Link to={loginPath(from)}>Sign in</Link>
         </>
       }
     >

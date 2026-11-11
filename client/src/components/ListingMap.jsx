@@ -26,6 +26,27 @@ const clusterIcon = (cluster) =>
     iconSize: [40, 40],
   });
 
+// Marks the map as deliberately used as soon as the visitor touches it. The
+// programmatic fitBounds() that follows a search must not count, otherwise the
+// first result set would immediately filter itself to its own viewport.
+function UserInteraction({ onInteract }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!onInteract) return undefined;
+    const el = map.getContainer();
+    const mark = () => onInteract();
+    el.addEventListener('pointerdown', mark);
+    el.addEventListener('wheel', mark, { passive: true });
+    el.addEventListener('touchstart', mark, { passive: true });
+    return () => {
+      el.removeEventListener('pointerdown', mark);
+      el.removeEventListener('wheel', mark);
+      el.removeEventListener('touchstart', mark);
+    };
+  }, [map, onInteract]);
+  return null;
+}
+
 // Reports the visible bounds whenever the user stops panning or zooming.
 function BoundsWatcher({ onChange }) {
   const map = useMap();
@@ -52,7 +73,7 @@ function FitToMarkers({ points, fitKey }) {
   return null;
 }
 
-export default function ListingMap({ listings = [], onBoundsChange, fitKey = 0 }) {
+export default function ListingMap({ listings = [], onBoundsChange, onInteract, fitKey = 0 }) {
   const points = useMemo(
     () =>
       listings
@@ -71,6 +92,7 @@ export default function ListingMap({ listings = [], onBoundsChange, fitKey = 0 }
   return (
     <MapContainer center={center} zoom={DEFAULT_ZOOM} scrollWheelZoom className="map">
       <TileLayer attribution={TILE_ATTRIBUTION} url={TILE_URL} />
+      {onInteract && <UserInteraction onInteract={onInteract} />}
       {onBoundsChange && <BoundsWatcher onChange={onBoundsChange} />}
       <FitToMarkers points={points} fitKey={fitKey} />
       <MarkerClusterGroup

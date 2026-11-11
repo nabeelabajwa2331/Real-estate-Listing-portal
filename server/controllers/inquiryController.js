@@ -36,15 +36,33 @@ export const createInquiry = async (req, res) => {
     return res.status(400).json({ message: 'You cannot inquire about your own listing' });
   }
 
-  const inquiry = await Inquiry.create({
+  // Reuse the existing thread for the same buyer, agent and listing instead of
+  // creating a second inbox entry for every follow-up message.
+  let inquiry = await Inquiry.findOne({
     listing: listing._id,
     user: req.user._id,
     agent: listing.agent._id,
-    subject: subject?.trim() || `Inquiry about ${listing.title}`,
-    messages: [{ sender: req.user._id, body: message }],
-    agentUnread: 1,
-    lastMessageAt: new Date(),
   });
+
+  if (inquiry) {
+    inquiry.messages.push({ sender: req.user._id, body: message });
+    inquiry.status = 'open';
+    inquiry.userUnread = 0;
+    inquiry.agentUnread = (inquiry.agentUnread || 0) + 1;
+    inquiry.lastMessageAt = new Date();
+    if (subject?.trim() && !inquiry.subject) inquiry.subject = subject.trim();
+    await inquiry.save();
+  } else {
+    inquiry = await Inquiry.create({
+      listing: listing._id,
+      user: req.user._id,
+      agent: listing.agent._id,
+      subject: subject?.trim() || `Inquiry about ${listing.title}`,
+      messages: [{ sender: req.user._id, body: message }],
+      agentUnread: 1,
+      lastMessageAt: new Date(),
+    });
+  }
 
   // Real-time push to the agent.
   emitToUser(listing.agent._id, 'inquiry:message', { inquiryId: inquiry._id.toString() });

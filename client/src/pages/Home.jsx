@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axios.js';
 import { useAuth, homeForRole } from '../context/AuthContext.jsx';
+import { useTitle } from '../utils/useTitle.js';
 
 const features = [
   {
@@ -48,6 +49,7 @@ const propertyTypes = [
 export default function Home() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  useTitle('Find your next home');
   const [stats, setStats] = useState(null);
   const [search, setSearch] = useState({ city: '', listingType: '', propertyType: '' });
 
@@ -72,10 +74,6 @@ export default function Home() {
     });
     const query = params.toString();
     navigate(query ? `/listings?${query}` : '/listings');
-  };
-
-  const browseCity = (city) => {
-    navigate(`/listings?city=${encodeURIComponent(city)}`);
   };
 
   return (
@@ -194,12 +192,12 @@ export default function Home() {
         </div>
         <div className="home-city-grid">
           {cities.map((city) => (
-            <button key={city} type="button" className="home-city" onClick={() => browseCity(city)}>
+            <Link key={city} to={`/listings?city=${encodeURIComponent(city)}`} className="home-city">
               <span>{city}</span>
               <span className="home-city-arrow" aria-hidden="true">
                 →
               </span>
-            </button>
+            </Link>
           ))}
         </div>
       </section>

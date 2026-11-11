@@ -7,6 +7,7 @@ import { assetUrl } from '../config/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useInquiries } from '../context/InquiryContext.jsx';
 import { useChat } from '../context/ChatContext.jsx';
+import { useTitle } from '../utils/useTitle.js';
 
 const timeAgo = (value) => {
   if (!value) return '';
@@ -31,6 +32,7 @@ const tabs = [
 
 export default function Messages() {
   const { user } = useAuth();
+  useTitle('Messages');
   const demoBuyer = Boolean(user?.isDemoBuyer);
   const { refresh: refreshInquiries, tick: inquiryTick } = useInquiries();
   const { refresh: refreshChat, tick: chatTick } = useChat();
@@ -38,7 +40,14 @@ export default function Messages() {
   const { chatId, inquiryId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const activeKind = chatId ? 'chat' : inquiryId ? 'inquiry' : null;
+  // A listing's "Chat with agent" button opens a draft composer here. Nothing
+  // is written to the database until the first message is sent.
+  const draftTo = searchParams.get('to');
+  const draftListing = searchParams.get('listing');
+  const draftName = searchParams.get('name');
+  const draftListingTitle = searchParams.get('listingTitle');
+
+  const activeKind = chatId ? 'chat' : inquiryId ? 'inquiry' : draftTo ? 'new' : null;
 
   const tabParam = searchParams.get('tab');
   const tab = tabParam === 'chats' || tabParam === 'inquiries' ? tabParam : 'all';
@@ -211,14 +220,28 @@ export default function Messages() {
   });
 
   const activeInquiryOther = inquiryOther(activeInquiry);
-  const activeTitle = activeKind === 'chat' ? activeChat?.user?.name : activeInquiryOther?.name;
+  const activeTitle =
+    activeKind === 'chat'
+      ? activeChat?.user?.name
+      : activeKind === 'new'
+        ? draftName || 'New conversation'
+        : activeInquiryOther?.name;
   const activeSubtitle =
     activeKind === 'chat'
       ? activeChat?.user?.role || 'Member'
-      : activeInquiry?.listing?.title
-        ? `About ${activeInquiry.listing.title}`
-        : 'Listing removed';
-  const activeMessages = activeKind === 'chat' ? activeChat?.messages || [] : activeInquiry?.messages || [];
+      : activeKind === 'new'
+        ? draftListingTitle
+          ? `About ${draftListingTitle}`
+          : 'Send a message to start the conversation'
+        : activeInquiry?.listing?.title
+          ? `About ${activeInquiry.listing.title}`
+          : 'Listing removed';
+  const activeMessages =
+    activeKind === 'chat'
+      ? activeChat?.messages || []
+      : activeKind === 'new'
+        ? []
+        : activeInquiry?.messages || [];
 
   const onSearchChange = (e) => {
     const value = e.target.value;
@@ -240,21 +263,15 @@ export default function Messages() {
     }, 300);
   };
 
-  const startWith = async (person) => {
+  const startWith = (person) => {
     if (demoBuyer) return;
     setListError('');
-    try {
-      const { data } = await api.post('/chat/conversations', { userId: person.id });
-      setShowNew(false);
-      setSearch('');
-      setResults([]);
-      navigate(`/messages/chat/${data.conversation.id}`);
-      const next = await loadList();
-      setInquiries(next.inquiries);
-      setConversations(next.conversations);
-    } catch (err) {
-      setListError(errorMessage(err));
-    }
+    setShowNew(false);
+    setSearch('');
+    setResults([]);
+    // Open a draft composer; the conversation is created on first send.
+    const params = new URLSearchParams({ to: person.id, name: person.name || 'Agent' });
+    navigate(`/messages?${params.toString()}`);
   };
 
   const send = async (e) => {
@@ -263,6 +280,18 @@ export default function Messages() {
     setSending(true);
     setThreadError('');
     try {
+      if (activeKind === 'new') {
+        // The first send is what creates the thread (with the listing context).
+        const { data } = await api.post('/chat/conversations', {
+          userId: draftTo,
+          listingId: draftListing || undefined,
+          body: draft,
+        });
+        setDraft('');
+        navigate(`/messages/chat/${data.conversation.id}`);
+        return;
+      }
+
       if (activeKind === 'chat') {
         await api.post(`/chat/conversations/${chatId}/messages`, { body: draft });
         const { data } = await api.get(`/chat/conversations/${chatId}`);
@@ -308,7 +337,7 @@ export default function Messages() {
               <input
                 value={search}
                 onChange={onSearchChange}
-                placeholder="Search people by name or email"
+                placeholder="Search agents by name"
                 autoFocus
               />
               <div className="msg-results">
@@ -360,7 +389,7 @@ export default function Messages() {
                   {demoBuyer
                     ? 'The sample Google buyer is for browsing only. Messaging is disabled.'
                     : items.length === 0
-                      ? 'No messages yet. Start a chat with an agent or another member.'
+                      ? 'No messages yet. Start a chat with an agent from a listing.'
                       : 'No conversations match this filter.'}
                 </p>
                 {items.length === 0 && (
@@ -429,8 +458,14 @@ export default function Messages() {
                     <p className="muted small">{activeSubtitle}</p>
                   </div>
 
-                  {activeKind === 'inquiry' && activeInquiry?.listing?._id && (
-                    <Link to={`/listings/${activeInquiry.listing._id}`} className="btn btn-sm msg-head-action">
+                  {((activeKind === 'inquiry' && activeInquiry?.listing?._id) ||
+                    (activeKind === 'new' && draftListing)) && (
+                    <Link
+                      to={`/listings/${
+                        activeKind === 'inquiry' ? activeInquiry.listing._id : draftListing
+                      }`}
+                      className="btn btn-sm msg-head-action"
+                    >
                       View listing
                     </Link>
                   )}

@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import api, { errorMessage } from '../../api/axios.js';
-import LocationPicker from '../../components/LocationPicker.jsx';
 import SmartImage from '../../components/SmartImage.jsx';
 import { assetUrl } from '../../config/api.js';
+import { useTitle } from '../../utils/useTitle.js';
+
+// The map picker pulls in Leaflet, so load it only when the form is open.
+const LocationPicker = lazy(() => import('../../components/LocationPicker.jsx'));
 
 const empty = {
   title: '',
@@ -32,6 +35,7 @@ export default function ListingForm() {
   const { id } = useParams();
   const editing = Boolean(id);
   const navigate = useNavigate();
+  useTitle(editing ? 'Edit listing' : 'Create a listing');
 
   const [form, setForm] = useState(empty);
   const [existing, setExisting] = useState([]);
@@ -124,6 +128,24 @@ export default function ListingForm() {
   const onSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    // Match the server-side completeness rules before sending anything.
+    if (!form.street.trim()) {
+      setError('Add the street address so buyers know where the property is.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (!form.lat || !form.lng) {
+      setError('Set the map location (latitude and longitude) so the listing appears on the map.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (totalImages === 0) {
+      setError('Add at least one photo before publishing.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     setBusy(true);
     try {
       const fd = new FormData();
@@ -221,7 +243,13 @@ export default function ListingForm() {
         <div className="form-grid">
           <label className="span-2">
             Street
-            <input name="street" value={form.street} onChange={onChange} placeholder="House 12, Street 4" />
+            <input
+              name="street"
+              value={form.street}
+              onChange={onChange}
+              required
+              placeholder="House 12, Street 4"
+            />
           </label>
           <label>
             City
@@ -245,7 +273,8 @@ export default function ListingForm() {
       <section className="form-section">
         <h2>Map location</h2>
         <p className="muted small">
-          Set the pin so this listing appears on the map in search results. This is optional.
+          Required: set the pin so this listing appears on the map in search results. Use
+          “Locate from address” or click the map.
         </p>
         <div className="form-grid">
           <label>
@@ -266,11 +295,13 @@ export default function ListingForm() {
           {geo.label && <span className="geo-msg muted">{geo.label}</span>}
         </div>
 
-        <LocationPicker
-          lat={form.lat}
-          lng={form.lng}
-          onChange={(lat, lng) => setForm((f) => ({ ...f, lat: lat.toFixed(6), lng: lng.toFixed(6) }))}
-        />
+        <Suspense fallback={<div className="map map-loading">Loading map…</div>}>
+          <LocationPicker
+            lat={form.lat}
+            lng={form.lng}
+            onChange={(lat, lng) => setForm((f) => ({ ...f, lat: lat.toFixed(6), lng: lng.toFixed(6) }))}
+          />
+        </Suspense>
       </section>
 
       <section className="form-section">
@@ -298,8 +329,12 @@ export default function ListingForm() {
       <section className="form-section">
         <h2>Photos</h2>
         <p className="muted small">
-          Upload up to {MAX_IMAGES} images. The first one is used as the cover. ({totalImages}/{MAX_IMAGES} selected)
+          At least one photo is required. Upload up to {MAX_IMAGES} images; the first one is used as
+          the cover. ({totalImages}/{MAX_IMAGES} selected)
         </p>
+        {totalImages === 0 && (
+          <p className="field-hint field-hint-error">Add at least one photo before publishing.</p>
+        )}
 
         {existing.length > 0 && (
           <div className="photo-grid">

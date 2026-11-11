@@ -1,10 +1,17 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import api, { errorMessage } from '../api/axios.js';
 import ListingCard from '../components/ListingCard.jsx';
-import ListingMap from '../components/ListingMap.jsx';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useSavedSearches } from '../context/SavedSearchesContext.jsx';
+import { loginPath, locationToPath } from '../utils/redirect.js';
+import { validateSearchFilters } from '../utils/search.js';
+import { useTitle } from '../utils/useTitle.js';
+
+// Leaflet is only needed once the results have rendered, so keep it out of the
+// initial bundle.
+const ListingMap = lazy(() => import('../components/ListingMap.jsx'));
 
 const emptyFilters = {
   city: '',
@@ -66,8 +73,10 @@ export default function Listings() {
   const { user } = useAuth();
   const { create: createSearch, saving: savingSearch } = useSavedSearches();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const initial = useRef(readInitialState(searchParams)).current;
+  useTitle('Browse properties');
 
   const [form, setForm] = useState(initial.filters);
   const [filters, setFilters] = useState(initial.filters); // applied filters
@@ -75,6 +84,9 @@ export default function Listings() {
   const [page, setPage] = useState(initial.page);
   const [bounds, setBounds] = useState(initial.bounds);
   const [autoSearch, setAutoSearch] = useState(true);
+  // Bounds are only sent to the API after the visitor has deliberately moved
+  // the map. The initial fitBounds() must not silently narrow the search.
+  const [mapActive, setMapActive] = useState(Boolean(initial.bounds));
   const [showMore, setShowMore] = useState(
     Boolean(initial.filters.minArea || initial.filters.maxArea || initial.filters.bedrooms)
   );
@@ -86,26 +98,42 @@ export default function Listings() {
   const [notice, setNotice] = useState('');
   const [fitKey, setFitKey] = useState(0);
 
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [saveName, setSaveName] = useState('');
+  const [saveIncludeArea, setSaveIncludeArea] = useState(false);
+
   const shouldFit = useRef(true);
   const autoSearchRef = useRef(autoSearch);
   autoSearchRef.current = autoSearch;
+  const mapActiveRef = useRef(Boolean(initial.bounds));
   const boundsTimer = useRef();
 
-  // Params actually sent to the API (includes paging + viewport bounds).
+  const markMapActive = useCallback(() => {
+    if (mapActiveRef.current) return;
+    mapActiveRef.current = true;
+    setMapActive(true);
+  }, []);
+
+  // Params actually sent to the API (includes paging + viewport bounds once the
+  // map has been touched deliberately).
   const requestParams = useMemo(() => {
     const p = { ...filters, sort, page, limit: LIMIT };
-    if (autoSearch && bounds) Object.assign(p, bounds);
+    if (autoSearch && mapActive && bounds) Object.assign(p, bounds);
     return p;
-  }, [filters, sort, page, bounds, autoSearch]);
+  }, [filters, sort, page, bounds, autoSearch, mapActive]);
 
-  // Params stored in a saved search (no paging; keeps the filters + area).
-  const savedParams = useMemo(() => {
-    const p = {};
-    for (const key of FILTER_KEYS) if (filters[key]) p[key] = filters[key];
-    if (sort !== 'newest') p.sort = sort;
-    if (autoSearch && bounds) Object.assign(p, bounds);
-    return p;
-  }, [filters, sort, bounds, autoSearch]);
+  // Params stored in a saved search. The map area is opt-in through the save
+  // dialog so an automatically fitted viewport never becomes part of a search.
+  const buildSavedParams = useCallback(
+    (includeArea) => {
+      const p = {};
+      for (const key of FILTER_KEYS) if (filters[key]) p[key] = filters[key];
+      if (sort !== 'newest') p.sort = sort;
+      if (includeArea && bounds) Object.assign(p, bounds);
+      return p;
+    },
+    [filters, sort, bounds]
+  );
 
   useEffect(() => {
     let active = true;
@@ -139,6 +167,12 @@ export default function Listings() {
     setSort((current) => (current === next.sort ? current : next.sort));
     setPage((current) => (current === next.page ? current : next.page));
     setBounds((current) => (sameBoundsValue(current, next.bounds) ? current : next.bounds));
+    // A replayed saved search that includes an area is an intentional viewport,
+    // so its bounds may be sent back to the API.
+    if (next.bounds) {
+      mapActiveRef.current = true;
+      setMapActive(true);
+    }
   }, [searchParams]);
 
   // Keep the URL in step with the current search so it is shareable.
@@ -147,12 +181,14 @@ export default function Listings() {
     for (const key of FILTER_KEYS) if (filters[key]) next.set(key, filters[key]);
     if (sort !== 'newest') next.set('sort', sort);
     if (page > 1) next.set('page', String(page));
-    if (autoSearch && bounds) for (const key of BOUND_KEYS) next.set(key, Number(bounds[key]).toFixed(6));
+    if (autoSearch && mapActive && bounds) {
+      for (const key of BOUND_KEYS) next.set(key, Number(bounds[key]).toFixed(6));
+    }
     setSearchParams(next, { replace: true });
-  }, [filters, sort, page, bounds, autoSearch, setSearchParams]);
+  }, [filters, sort, page, bounds, autoSearch, mapActive, setSearchParams]);
 
   const onBoundsChange = useCallback((next) => {
-    if (!autoSearchRef.current) return;
+    if (!autoSearchRef.current || !mapActiveRef.current) return;
     clearTimeout(boundsTimer.current);
     boundsTimer.current = setTimeout(() => {
       setBounds((prev) => (sameBounds(prev, next) ? prev : next));
@@ -163,6 +199,12 @@ export default function Listings() {
 
   const onSubmit = (e) => {
     e.preventDefault();
+    const invalid = validateSearchFilters(form);
+    if (invalid) {
+      setError(invalid);
+      return;
+    }
+    setError('');
     shouldFit.current = true;
     setFilters(form);
     setPage(1);
@@ -177,7 +219,11 @@ export default function Listings() {
   const toggleAutoSearch = (e) => {
     const value = e.target.checked;
     setAutoSearch(value);
-    if (!value) setBounds(null);
+    if (!value) {
+      setBounds(null);
+      mapActiveRef.current = false;
+      setMapActive(false);
+    }
   };
 
   const resetFilters = () => {
@@ -193,26 +239,38 @@ export default function Listings() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const saveSearch = async () => {
+  const saveSearch = () => {
     if (savingSearch) return; // ignore double clicks while a save is in flight
     setError('');
     setNotice('');
     if (!user) {
-      navigate('/login', { state: { from: { pathname: '/listings' } } });
+      // Guests keep browsing; saving is the one action that needs an account.
+      navigate(loginPath(locationToPath(location)));
       return;
     }
 
     const suggested =
       [filters.city, filters.propertyType].filter(Boolean).join(' ') ||
       (filters.listingType === 'rent' ? 'Rentals' : filters.listingType === 'sale' ? 'For sale' : 'All listings');
-    const name = window.prompt('Name this search', suggested);
-    if (!name) return;
+    setSaveName(suggested);
+    setSaveIncludeArea(false);
+    setSaveOpen(true);
+  };
+
+  const confirmSaveSearch = async () => {
+    const name = saveName.trim();
+    if (!name) {
+      setError('Give this search a name.');
+      return;
+    }
 
     try {
-      const data = await createSearch(name.trim(), savedParams);
-      setNotice(data.message || `Saved "${name.trim()}" to your dashboard.`);
+      const data = await createSearch(name, buildSavedParams(saveIncludeArea));
+      setSaveOpen(false);
+      setNotice(data.message || `Saved "${name}" to your dashboard.`);
     } catch (err) {
       setError(errorMessage(err));
+      setSaveOpen(false);
     }
   };
 
@@ -323,6 +381,11 @@ export default function Listings() {
       </div>
 
       {notice && <p className="alert alert-success">{notice}</p>}
+      {loading && listings.length > 0 && (
+        <p className="search-status" role="status" aria-live="polite">
+          Updating results…
+        </p>
+      )}
 
       <div className="search-layout" aria-busy={loading}>
         <div className="search-results">
@@ -369,9 +432,52 @@ export default function Listings() {
               Search as I move the map
             </label>
           </div>
-          <ListingMap listings={listings} onBoundsChange={onBoundsChange} fitKey={fitKey} />
+          <Suspense fallback={<div className="map map-loading">Loading map…</div>}>
+            <ListingMap
+              listings={listings}
+              onBoundsChange={onBoundsChange}
+              onInteract={markMapActive}
+              fitKey={fitKey}
+            />
+          </Suspense>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={saveOpen}
+        title="Save this search"
+        description="We will keep these filters in your dashboard so you can run them again later."
+        confirmLabel="Save search"
+        busy={savingSearch}
+        confirmDisabled={!saveName.trim()}
+        onCancel={() => setSaveOpen(false)}
+        onConfirm={confirmSaveSearch}
+      >
+        <label>
+          Name
+          <input
+            value={saveName}
+            onChange={(e) => setSaveName(e.target.value)}
+            maxLength={80}
+            autoFocus
+            placeholder="e.g. 3-bed houses in Lahore"
+          />
+        </label>
+        <label className="checkbox dialog-checkbox">
+          <input
+            type="checkbox"
+            checked={saveIncludeArea}
+            onChange={(e) => setSaveIncludeArea(e.target.checked)}
+            disabled={!bounds}
+          />
+          Include the current map area
+        </label>
+        {!bounds && (
+          <p className="muted small">
+            Move the map first if you want to save a specific area.
+          </p>
+        )}
+      </ConfirmDialog>
     </section>
   );
 }

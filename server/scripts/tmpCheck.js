@@ -1,0 +1,14 @@
+﻿import 'dotenv/config';
+import mongoose from 'mongoose';
+import connectDB from '../config/db.js';
+import Listing from '../models/Listing.js';
+await connectDB();
+const total = await Listing.countDocuments();
+const approved = await Listing.countDocuments({status:'approved'});
+const noCoords = await Listing.countDocuments({status:'approved', $or:[{location:{$exists:false}},{'location.coordinates':{$exists:false}},{'location.coordinates':{$size:0}}]});
+const noImages = await Listing.countDocuments({status:'approved', $or:[{images:{$exists:false}},{'images.0':{$exists:false}}]});
+const noStreet = await Listing.countDocuments({status:'approved', $or:[{'address.street':{$exists:false}},{'address.street':''}]});
+console.log({total,approved,noCoords,noImages,noStreet});
+const sample = await Listing.find({status:'approved'}).select('title address location images').limit(3).lean();
+console.log(JSON.stringify(sample,null,2));
+await mongoose.disconnect();

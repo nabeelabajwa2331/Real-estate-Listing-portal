@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin
+Disallow: /agent
+Disallow: /dashboard
+Disallow: /listings
+Disallow: /messages
+Disallow: /profile
+Disallow: /inbox
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify
+
+Sitemap: https://real-estate-listing-portal-hazel.vercel.app/sitemap.xml
