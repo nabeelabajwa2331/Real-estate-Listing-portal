@@ -2,7 +2,7 @@ export const notFound = (req, res) => {
   res.status(404).json({ message: `Not found: ${req.method} ${req.originalUrl}` });
 };
 
-// Central error handler. Express 5 forwards errors thrown in async route handlers here.
+// Express 5 forwards errors from async handlers here.
 // eslint-disable-next-line no-unused-vars
 export const errorHandler = (err, req, res, next) => {
   let status = err.status || err.statusCode || 500;

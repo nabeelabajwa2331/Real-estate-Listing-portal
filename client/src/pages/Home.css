@@ -1,6 +1,3 @@
-/* Homepage refinements layered on top of the existing home tokens.
-   New selectors are used wherever the public page gained a component, so the
-   rest of the site keeps its current styling. */
 
 .home-page {
   padding: 18px 0 8px;

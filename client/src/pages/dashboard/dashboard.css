@@ -1,7 +1,4 @@
-/* ============================================================
-   Workspace shell: user dashboard + admin dashboard
-   Full-height sidebars, application-style content panes.
-   ============================================================ */
+/* Workspace shell */
 
 .workspace-main {
   flex: 1 0 auto;
@@ -420,9 +417,7 @@ a.dash-metric:focus-visible {
   display: none;
 }
 
-/* ============================================================
-   Shared page chrome
-   ============================================================ */
+/* Shared page chrome */
 .dash-page {
   display: flex;
   flex-direction: column;
@@ -464,9 +459,7 @@ a.dash-metric:focus-visible {
   flex-wrap: wrap;
 }
 
-/* ============================================================
-   User dashboard
-   ============================================================ */
+/* User dashboard */
 .dash-metrics {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -530,8 +523,6 @@ a.dash-metric:hover {
   line-height: 1.3;
 }
 
-/* The verification tick is a true overlay badge: centred inside its own
-   circle regardless of the size of the parent icon. */
 .dash-metric-check {
   position: absolute;
   right: -4px;
@@ -811,9 +802,7 @@ a.dash-metric:hover {
   min-width: 96px;
 }
 
-/* ============================================================
-   Admin dashboard
-   ============================================================ */
+/* Admin dashboard */
 .admin-page-head {
   margin-bottom: 20px;
 }
@@ -1167,9 +1156,7 @@ a.dash-metric:hover {
   gap: 8px;
 }
 
-/* ============================================================
-   Admin messages
-   ============================================================ */
+/* Admin messages */
 .admin-messages {
   display: grid;
   grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
@@ -1369,9 +1356,7 @@ a.dash-metric:hover {
   }
 }
 
-/* ============================================================
-   Responsive
-   ============================================================ */
+/* Responsive */
 
 /* Smaller laptops: reduce sidebar width without collapsing the shell. */
 @media (max-width: 1180px) {

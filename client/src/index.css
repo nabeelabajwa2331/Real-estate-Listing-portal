@@ -663,9 +663,7 @@ main.container {
   }
 }
 
-/* ============================================================
-   Listings: browse, cards, gallery, detail, dashboard, form
-   ============================================================ */
+/* Listings */
 
 /* Shared page header */
 .page-head {
@@ -1261,9 +1259,7 @@ main.container {
   }
 }
 
-/* ============================================================
-   Admin panel: tabs, review queue, user management
-   ============================================================ */
+/* Admin panel */
 
 .tabs {
   display: flex;
@@ -1440,9 +1436,7 @@ main.container {
   }
 }
 
-/* ============================================================
-   Search: filters, sorting, results + Leaflet map
-   ============================================================ */
+/* Search */
 
 .filter-actions {
   display: flex;
@@ -1621,9 +1615,7 @@ main.container {
   }
 }
 
-/* ============================================================
-   Favorites and user dashboard
-   ============================================================ */
+/* Favorites and user dashboard */
 
 /* Heart button over a listing card image */
 .fav-btn {
@@ -1832,9 +1824,7 @@ main.container {
   }
 }
 
-/* ============================================================
-   Inquiries: form, inbox list, conversation thread
-   ============================================================ */
+/* Inquiries */
 
 .inquiry-form {
   display: flex;
@@ -2033,9 +2023,7 @@ main.container {
   }
 }
 
-/* ============================================================
-   Avatars, quoted replies, profile photo
-   ============================================================ */
+/* Avatars, quoted replies, profile photo */
 
 .avatar {
   display: inline-flex;
@@ -2148,9 +2136,7 @@ main.container {
   cursor: pointer;
 }
 
-/* ============================================================
-   Chat (separate from inquiries)
-   ============================================================ */
+/* Chat */
 
 .chat-layout {
   display: grid;
@@ -2398,9 +2384,7 @@ main.container {
   }
 }
 
-/* ============================================================
-   Responsive polish
-   ============================================================ */
+/* Responsive polish */
 
 /* Long content should wrap rather than overflow */
 .thread-message-body,
@@ -2450,9 +2434,7 @@ main.container {
   }
 }
 
-/* ============================================================
-   Responsive pass: tablets, phones, small phones, touch
-   ============================================================ */
+/* Responsive pass */
 
 /* ---------- Header: collapse the links into a menu ---------- */
 @media (max-width: 900px) {
@@ -2933,8 +2915,6 @@ main.container {
   }
 }
 
-/* Nav links are styled as links, so buttons inside the nav need their own
-   colors re-asserted (otherwise the Register button turns dark-on-dark). */
 .nav-links .btn {
   color: var(--text);
 }
@@ -3003,9 +2983,7 @@ main.container {
   }
 }
 
-/* ============================================================
-   Auth pages (sign in / register)
-   ============================================================ */
+/* Auth pages */
 .auth-page {
   padding: 8px 0 32px;
 }
@@ -3105,8 +3083,6 @@ main.container {
   font-size: 0.92rem;
   color: #ffffff;
 }
-/* Scope this to the copy block so it cannot override .auth-point-check's
-   inline-flex centring (that was what pushed the tick marks off-centre). */
 .auth-points li > div span {
   display: block;
   font-size: 0.8rem;
@@ -3292,8 +3268,6 @@ main.container {
   font-size: 0.86rem;
   color: var(--muted);
 }
-/* Keeps "Forgot password?" at the bottom-right of the card, while the
-   create-account prompt stays on the left. */
 .auth-panel-foot-row {
   display: flex;
   align-items: center;
@@ -3397,9 +3371,7 @@ main.container {
   }
 }
 
-/* ============================================================
-   Dashboard: wide layout + overview
-   ============================================================ */
+/* Dashboard */
 .dashboard-layout {
   grid-template-columns: 260px minmax(0, 1fr);
   gap: 26px;
@@ -3483,9 +3455,6 @@ main.container {
   letter-spacing: -0.02em;
   color: var(--text-strong);
 }
-/* Scope this to the copy block so it cannot override .dash-stat-icon's
-   inline-flex centring. An unscoped `.dash-stat span` turned the icon badge
-   into a block, which pinned the SVG to the top-left corner. */
 .dash-stat > div span {
   display: block;
 }
@@ -3634,9 +3603,7 @@ main.container {
   }
 }
 
-/* ============================================================
-   Unified messages (WhatsApp-style)
-   ============================================================ */
+/* Unified messages */
 .messages-page {
   width: 100%;
 }
@@ -4038,9 +4005,7 @@ main.container {
   }
 }
 
-/* ============================================================
-   Profile — WhatsApp-style identity panel + wide settings
-   ============================================================ */
+/* Profile */
 .profile-page {
   display: flex;
   flex-direction: column;
@@ -4303,12 +4268,8 @@ main.container {
   }
 }
 
-/* ============================================================
-   Final responsive pass
-   ============================================================ */
+/* Final responsive pass */
 
-/* Grid and flex children need min-width: 0 so long emails, listing titles and
-   form controls can shrink instead of forcing horizontal scrolling. */
 .auth-shell > *,
 .dashboard-layout > *,
 .profile-shell > *,
@@ -4391,7 +4352,6 @@ main.container {
     padding: 0;
   }
 }
-
 
 /* ---------- In-app dialogs (replace window.confirm / window.prompt) ---------- */
 .dialog-backdrop {

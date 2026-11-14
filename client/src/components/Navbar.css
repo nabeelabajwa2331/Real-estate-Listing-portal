@@ -1,6 +1,3 @@
-/* Premium marketplace header.
-   Scoped to the app header so the older public-page navbar rules in index.css
-   cannot leak into the redesigned component. */
 
 .app-header {
   --app-header-h: 72px;

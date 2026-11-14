@@ -74,7 +74,7 @@ async function lookupMailCapable(domain) {
     if (err.code !== 'ENODATA') return true; // transient DNS problem -> don't block
   }
 
-  // No MX: fall back to an A record, which acts as an implicit mail host (RFC 5321).
+  // No MX record: an A record also counts as a mail host (RFC 5321).
   try {
     const a = await withTimeout(dns.resolve4(domain), DNS_TIMEOUT_MS);
     return a.length > 0;

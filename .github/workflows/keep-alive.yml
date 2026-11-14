@@ -1,17 +1,7 @@
 name: Keep API warm
 
-# Render's free tier spins a web service down after ~15 minutes without
-# traffic, and the next visitor waits 30-60 seconds for it to boot. Pinging the
-# health endpoint every 10 minutes keeps the instance warm during the hours
-# reviewers and users are most likely to visit.
-#
-# Notes:
-# - GitHub runs scheduled workflows on a best-effort basis (delays of a few
-#   minutes are normal), so this greatly reduces cold starts but cannot
-#   guarantee zero. The client also shows a "waking up" notice and retries GETs.
-# - One always-on free service uses ~744 of Render's 750 free instance-hours a
-#   month. Narrow the cron hours below if you run other free services.
-# - Override the target with the API_HEALTH_URL repository variable.
+# Pings the API every 10 minutes so Render's free tier doesn't sleep.
+# Set the API_HEALTH_URL repository variable to change the target.
 
 on:
   schedule:
