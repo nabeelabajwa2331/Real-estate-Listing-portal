@@ -1,7 +1,3 @@
-// Rejects obviously fake addresses so accounts always have a deliverable inbox
-// that the owner can verify. Combines a formatting/domain check with a live DNS
-// check that the domain can actually receive mail.
-
 import { promises as dns } from 'dns';
 
 const PLACEHOLDER_DOMAINS = new Set([
@@ -19,7 +15,6 @@ const PLACEHOLDER_DOMAINS = new Set([
 
 const PLACEHOLDER_TLDS = ['.test', '.invalid', '.localhost', '.example', '.local'];
 
-// A short list of common disposable/temporary mail providers.
 const DISPOSABLE_DOMAINS = new Set([
   'mailinator.com',
   'tempmail.com',
@@ -67,13 +62,10 @@ const withTimeout = (promise, ms) =>
     );
   });
 
-// Remembers recent lookups so repeated signups on the same domain (gmail.com,
-// etc.) don't hit DNS every time.
 const cache = new Map();
 const CACHE_MS = 10 * 60 * 1000;
 
 async function lookupMailCapable(domain) {
-  // A domain that publishes MX records can receive mail.
   try {
     const mx = await withTimeout(dns.resolveMx(domain), DNS_TIMEOUT_MS);
     if (mx.length) return true;
@@ -92,9 +84,6 @@ async function lookupMailCapable(domain) {
   }
 }
 
-// True when the domain can plausibly receive mail. Fails open on transient DNS
-// errors so a resolver hiccup never blocks legitimate signups; only a definitive
-// "no MX and no A record" is treated as invalid.
 export const domainCanReceiveMail = async (domain) => {
   if (!domain) return false;
 

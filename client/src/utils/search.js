@@ -8,7 +8,6 @@ export const propertyLabels = {
 
 const num = (value) => Number(value).toLocaleString('en-US');
 
-// Human-readable one-liner for a saved search.
 export function searchSummary(params = {}) {
   const parts = [];
   if (params.listingType) parts.push(params.listingType === 'rent' ? 'For rent' : 'For sale');
@@ -24,7 +23,6 @@ export function searchSummary(params = {}) {
   return parts.length ? parts.join(' · ') : 'All listings';
 }
 
-// Turns stored params back into a query string for /listings.
 export function searchQueryString(params = {}) {
   const qs = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
@@ -38,8 +36,6 @@ const RANGES = [
   ['minArea', 'maxArea', 'area'],
 ];
 
-// Validates the numeric filter fields before a request is sent. Returns an
-// error message, or an empty string when the filters are usable.
 export function validateSearchFilters(filters = {}) {
   for (const [key, label] of [
     ['minPrice', 'Minimum price'],

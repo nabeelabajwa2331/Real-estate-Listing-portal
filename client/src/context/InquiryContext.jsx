@@ -25,8 +25,6 @@ export function InquiryProvider({ children }) {
     }
   }, [userId]);
 
-  // Messages that arrived while the connection was down were never pushed,
-  // so catch up once it is back.
   useEffect(() => {
     if (!socket) return undefined;
     const onReconnect = () => {

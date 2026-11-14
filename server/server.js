@@ -11,8 +11,6 @@ if (!process.env.JWT_SECRET) {
   process.exit(1);
 }
 
-// Email is required when verification is on; warn loudly rather than let signups
-// silently fail in production.
 if (process.env.REQUIRE_EMAIL_VERIFICATION !== 'false' && !process.env.SMTP_HOST && process.env.NODE_ENV === 'production') {
   console.warn(
     'WARNING: email verification is required but SMTP_HOST is not set. ' +
@@ -29,7 +27,6 @@ if (!process.env.GOOGLE_CLIENT_ID) {
 
 await connectDB();
 
-// Socket.IO attaches to this http server for real-time inquiry delivery.
 const server = http.createServer(app);
 initSocket(server);
 

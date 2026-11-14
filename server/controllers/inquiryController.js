@@ -9,8 +9,6 @@ import {
   DEMO_BUYER_RECIPIENT_BLOCKED,
 } from '../utils/demo.js';
 
-// Emails the other party. The dev fallback in sendEmail prints it to the server
-// terminal when SMTP is not configured.
 async function notify(recipient, inquiry, listingTitle, fromName, body) {
   if (!recipient?.email) return;
   const link = `${process.env.CLIENT_URL}/inbox/${inquiry._id}`;
@@ -30,8 +28,6 @@ export const createInquiry = async (req, res) => {
   const { listingId, message, subject } = req.body;
 
   const listing = await Listing.findById(listingId).populate('agent', 'name email');
-  // Only published listings can be asked about; pending or rejected records
-  // are private to their agent.
   if (!listing || listing.status !== 'approved') {
     return res.status(404).json({ message: 'Listing not found' });
   }
@@ -40,15 +36,11 @@ export const createInquiry = async (req, res) => {
     return res.status(400).json({ message: 'You cannot inquire about your own listing' });
   }
 
-  // Reuse the existing thread for the same buyer, agent and listing instead of
-  // creating a second inbox entry for every follow-up message.
   let inquiry = await Inquiry.findOne({
     listing: listing._id,
     user: req.user._id,
     agent: listing.agent._id,
   });
-  // Email only when the agent had nothing unread here; follow-ups to an
-  // unread thread are already waiting for them.
   const shouldEmail = !inquiry || !inquiry.agentUnread;
 
   if (inquiry) {
@@ -71,7 +63,6 @@ export const createInquiry = async (req, res) => {
     });
   }
 
-  // Real-time push to the agent.
   emitToUser(listing.agent._id, 'inquiry:message', { inquiryId: inquiry._id.toString() });
 
   if (shouldEmail) await notify(listing.agent, inquiry, listing.title, req.user.name, message);
@@ -118,7 +109,6 @@ export const getInquiry = async (req, res) => {
   const isUser = inquiry.user?._id?.toString() === uid;
   if (!isAgent && !isUser) return res.status(403).json({ message: 'You are not part of this conversation' });
 
-  // Mark the viewer's side as read without saving populated subdocuments.
   const clear = {};
   if (isAgent && inquiry.agentUnread) clear.agentUnread = 0;
   if (isUser && inquiry.userUnread) clear.userUnread = 0;
@@ -144,8 +134,6 @@ export const replyToInquiry = async (req, res) => {
     return res.status(403).json({ message: DEMO_BUYER_BLOCKED });
   }
 
-  // Agents cannot keep a conversation alive with the browsing-only sample
-  // buyer either, so the restriction cannot be bypassed from the other side.
   if (isAgent) {
     const buyer = await User.findById(inquiry.user).select('role email googleId');
     if (isDemoBuyer(buyer)) {
@@ -153,7 +141,6 @@ export const replyToInquiry = async (req, res) => {
     }
   }
 
-  // Build the message, snapshotting the quoted one when quotedId is given.
   const message = { sender: req.user._id, body: req.body.message };
   if (req.body.quotedId) {
     const original = inquiry.messages.id(req.body.quotedId);
@@ -173,11 +160,8 @@ export const replyToInquiry = async (req, res) => {
 
   const recipientId = isAgent ? inquiry.user : inquiry.agent;
 
-  // Real-time push to the other party.
   emitToUser(recipientId, 'inquiry:message', { inquiryId: inquiry._id.toString() });
 
-  // One email per batch: only when the recipient had read everything before
-  // this message, so a quick back-and-forth does not flood their inbox.
   const recipientHadUnread = isAgent ? inquiry.userUnread > 0 : inquiry.agentUnread > 0;
   if (!recipientHadUnread) {
     const [recipient, listing] = await Promise.all([

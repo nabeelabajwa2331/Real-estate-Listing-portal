@@ -1,6 +1,3 @@
-// Regenerates the static brand assets in client/public from the SVG favicon and
-// an existing hero photo. Run once (or whenever the brand colours change):
-//   node scripts/generateBrandAssets.js
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -18,8 +15,6 @@ const faviconSvg = `<?xml version="1.0" encoding="UTF-8"?>
 async function main() {
   const svg = Buffer.from(faviconSvg);
 
-  // A 32x32 PNG wrapped in an ICO container. Modern browsers accept PNG data
-  // inside an .ico file; this keeps the icon crisp without a legacy BMP encoder.
   const png = await sharp(svg).resize(32, 32).png().toBuffer();
   const header = Buffer.alloc(6);
   header.writeUInt16LE(0, 0); // reserved
@@ -36,7 +31,6 @@ async function main() {
   entry.writeUInt32LE(22, 12); // offset: header + one directory entry
   fs.writeFileSync(path.join(publicDir, 'favicon.ico'), Buffer.concat([header, entry, png]));
 
-  // Social preview card (1200x630) cropped from the hero image.
   const hero = path.join(publicDir, 'img', 'listings', 'hero-home.jpg');
   if (fs.existsSync(hero)) {
     await sharp(hero)

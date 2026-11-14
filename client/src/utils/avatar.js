@@ -1,5 +1,3 @@
-// Pure helpers for avatars (kept separate so they are easy to unit test).
-
 export const AVATAR_PALETTE = [
   '#0f6b4f',
   '#0a4b37',
@@ -25,7 +23,5 @@ export const colorFor = (name = '') => {
   return AVATAR_PALETTE[hash % AVATAR_PALETTE.length];
 };
 
-// Accepts either a user whose `avatar` is a URL string (publicUser) or a nested
-// { url } object (populated).
 export const avatarUrl = (user) =>
   (typeof user?.avatar === 'string' ? user.avatar : user?.avatar?.url) || null;

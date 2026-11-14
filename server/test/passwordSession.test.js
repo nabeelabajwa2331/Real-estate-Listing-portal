@@ -2,8 +2,6 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import User from '../models/User.js';
 
-// Sessions issued before a password change must stop working.
-
 test('a token is accepted when the password never changed', () => {
   const user = new User({ name: 'A', email: 'a@example.com', password: 'x'.repeat(8) });
   assert.equal(user.tokenPredatesPassword(Math.floor(Date.now() / 1000)), false);

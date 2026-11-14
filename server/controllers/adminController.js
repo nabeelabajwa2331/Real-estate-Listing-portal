@@ -16,7 +16,6 @@ const adminUser = (u) => ({
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-// ?page=&limit= with sane bounds, so admin lists stay fast as data grows.
 const paging = (query, defaultLimit, maxLimit) => {
   const limit = Math.min(maxLimit, Math.max(1, Number.parseInt(query.limit, 10) || defaultLimit));
   const page = Math.max(1, Number.parseInt(query.page, 10) || 1);
@@ -46,7 +45,6 @@ export const approveListing = async (req, res) => {
   const listing = await Listing.findById(req.params.id);
   if (!listing) return res.status(404).json({ message: 'Listing not found' });
 
-  // Never publish a record that buyers cannot locate or inspect.
   const incomplete = listingCompletenessError({
     address: listing.address,
     location: listing.location,
@@ -94,7 +92,6 @@ export const getUsers = async (req, res) => {
   const [users, total, grouped] = await Promise.all([
     User.find(filter).sort('-createdAt').skip(skip).limit(limit),
     User.countDocuments(filter),
-    // Totals across every account, for the overview metrics.
     User.aggregate([{ $group: { _id: '$role', count: { $sum: 1 } } }]),
   ]);
 

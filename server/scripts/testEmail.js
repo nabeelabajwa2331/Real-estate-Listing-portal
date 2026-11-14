@@ -1,6 +1,3 @@
-// Sends a test email using the SMTP settings in .env, so you can confirm delivery.
-// Usage: npm run test-email -- you@example.com
-// (Defaults to SMTP_USER when no address is given.)
 import 'dotenv/config';
 import sendEmail from '../utils/sendEmail.js';
 

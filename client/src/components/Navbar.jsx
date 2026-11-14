@@ -59,8 +59,6 @@ const icons = {
   ),
 };
 
-// The primary destination belongs to the role. Admins land on the admin
-// dashboard; members and agents keep their own workspace entry points.
 const dashboardLink = {
   admin: { to: '/admin', label: 'Dashboard', icon: icons.shield },
   agent: { to: '/agent', label: 'My listings', icon: icons.building },
@@ -80,13 +78,10 @@ export default function Navbar() {
     ['/login', '/register', '/forgot-password'].includes(location.pathname) ||
     location.pathname.startsWith('/reset-password');
 
-  // Close the mobile menu whenever the route changes.
   useEffect(() => {
     setMenuOpen(false);
   }, [location.pathname]);
 
-  // Escape closes the menu for keyboard users, and the page behind the open
-  // mobile panel must not scroll underneath it.
   useEffect(() => {
     if (!menuOpen) return undefined;
     const onKeyDown = (event) => {
@@ -101,8 +96,6 @@ export default function Navbar() {
     };
   }, [menuOpen]);
 
-  // Auth screens carry their own brand header, so the global navigation would
-  // only repeat the sign-in and registration actions.
   if (isAuthRoute) return null;
 
   const handleLogout = async () => {
@@ -155,8 +148,6 @@ export default function Navbar() {
               Browse homes
             </NavLink>
 
-            {/* Account-specific links wait for the session check, so a signed-in
-                user never sees "Sign in" flash before their own controls. */}
             {!loading && user && primary && (
               <NavLink to={primary.to} className="app-nav-link" onClick={() => setMenuOpen(false)}>
                 <span className="app-nav-icon">{primary.icon}</span>

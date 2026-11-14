@@ -1,14 +1,9 @@
-// Pure image-signature helpers. Kept separate from upload.js so they can be
-// unit-tested without loading Sharp or any native module.
-
 const startsWith = (buffer, bytes) =>
   buffer.length >= bytes.length && bytes.every((byte, index) => buffer[index] === byte);
 
 const ascii = (buffer, start, length) =>
   buffer.length >= start + length ? buffer.subarray(start, start + length).toString('ascii') : '';
 
-// Returns 'jpeg' | 'png' | 'webp' | null. The client-provided MIME type and
-// filename are never trusted; this inspects the actual bytes.
 export const detectImageType = (buffer) => {
   if (!buffer || buffer.length < 12) return null;
 
@@ -19,8 +14,6 @@ export const detectImageType = (buffer) => {
   return null;
 };
 
-// SVG is deliberately rejected: it is an executable document, not a bitmap,
-// and can carry scripts when served from the same origin.
 export const looksLikeSvg = (buffer) => {
   if (!buffer) return false;
   const head = buffer.subarray(0, Math.min(buffer.length, 512)).toString('utf8').trim().toLowerCase();

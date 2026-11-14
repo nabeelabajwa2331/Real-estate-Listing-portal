@@ -12,8 +12,6 @@ export const createSavedSearch = async (req, res) => {
   const name = req.body.name.trim();
   const params = cleanSearchParams(req.body.params);
 
-  // Pressing "Save search" twice (or re-saving the same criteria) must not
-  // create a second identical record, which would inflate the dashboard count.
   const existing = await SavedSearch.findOne({ user: req.user._id, name });
   if (existing && sameSearchParams(existing.params, params)) {
     return res.status(200).json({

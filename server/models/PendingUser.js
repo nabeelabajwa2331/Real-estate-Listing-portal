@@ -1,8 +1,5 @@
 import mongoose from 'mongoose';
 
-// A signup that hasn't confirmed its email yet. Keeping this separate means no
-// real user account is created for addresses that never verify, so placeholder
-// addresses cannot leave dummy accounts behind. Documents auto-expire via TTL.
 const pendingUserSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 80 },
@@ -17,7 +14,6 @@ const pendingUserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Unverified signups are removed automatically if they aren't confirmed.
 pendingUserSchema.index({ createdAt: 1 }, { expireAfterSeconds: 24 * 60 * 60 });
 
 export default mongoose.model('PendingUser', pendingUserSchema);

@@ -1,8 +1,5 @@
 import { useEffect, useId, useRef } from 'react';
 
-// Small in-app replacement for window.confirm/window.prompt. It keeps the
-// platform look, is keyboard accessible (Escape closes, focus moves inside) and
-// can host an input or a checkbox through `children`.
 export default function ConfirmDialog({
   open,
   title,
@@ -35,7 +32,6 @@ export default function ConfirmDialog({
     document.body.style.overflow = 'hidden';
     window.addEventListener('keydown', onKeyDown);
 
-    // Move focus into the dialog once it is painted.
     const timer = window.setTimeout(() => {
       (firstFieldRef.current || panelRef.current)?.focus?.();
     }, 0);

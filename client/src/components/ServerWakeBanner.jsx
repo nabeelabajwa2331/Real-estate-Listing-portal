@@ -3,7 +3,6 @@ import { useServerStatusStore } from '../store/serverStatusStore.js';
 
 const RECOVERED_MS = 3000;
 
-// Friendly notice shown while the free-tier API host is waking from sleep.
 export default function ServerWakeBanner() {
   const waking = useServerStatusStore((s) => s.slowRequests > 0);
   const recovered = useServerStatusStore((s) => s.recovered);

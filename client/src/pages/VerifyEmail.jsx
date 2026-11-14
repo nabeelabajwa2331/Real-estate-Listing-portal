@@ -5,7 +5,7 @@ import api, { errorMessage } from '../api/axios.js';
 export default function VerifyEmail() {
   const { token } = useParams();
   const [state, setState] = useState({ status: 'loading', message: '' });
-  const sent = useRef(false); // the token works once, so never send it twice (StrictMode runs effects twice in dev)
+  const sent = useRef(false);
 
   useEffect(() => {
     if (sent.current) return;

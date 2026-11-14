@@ -1,6 +1,5 @@
 import { validationResult } from 'express-validator';
 
-// Runs after express-validator rules and returns the first error per field.
 export default function validate(req, res, next) {
   const result = validationResult(req);
   if (result.isEmpty()) return next();

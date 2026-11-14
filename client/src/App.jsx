@@ -22,7 +22,6 @@ import Favorites from './pages/dashboard/Favorites.jsx';
 import SavedSearches from './pages/dashboard/SavedSearches.jsx';
 import NotFound from './pages/NotFound.jsx';
 
-// Old bookmarks keep working: inbox and chat now live in one Messages page.
 function InquiryRedirect() {
   const { id } = useParams();
   return <Navigate to={`/messages/inquiry/${id}`} replace />;
@@ -33,8 +32,6 @@ function ChatRedirect() {
   return <Navigate to={`/messages/chat/${id}`} replace />;
 }
 
-// The dashboard and admin screens are full-viewport application shells with
-// their own sidebar, so they must not sit inside the public page container.
 const isWorkspacePath = (pathname) =>
   pathname === '/dashboard' ||
   pathname.startsWith('/dashboard/') ||
@@ -52,8 +49,6 @@ export default function App() {
       <main className={isWorkspace ? 'workspace-main' : 'container'}>
         <Routes>
           <Route path="/" element={<Home />} />
-          {/* Browsing the full catalogue requires an account. A shared listing
-              link still opens for guests, showing the photos only. */}
           <Route path="/listings/:id" element={<ListingDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -72,10 +67,6 @@ export default function App() {
             <Route path="/chat" element={<Navigate to="/messages?tab=chats" replace />} />
             <Route path="/chat/:id" element={<ChatRedirect />} />
 
-            {/* Saved items are member-facing for every signed-in account.
-                The canonical URL is /dashboard/saved; the old /dashboard/favorites
-                path and top-level /saved aliases stay valid for bookmarks.
-                Admins are redirected to their own workspace. */}
             <Route element={<RoleRoute roles={['user', 'agent']} />}>
               <Route path="/dashboard" element={<DashboardLayout />}>
                 <Route index element={<Overview />} />
@@ -95,9 +86,6 @@ export default function App() {
             <Route path="/agent/:id/edit" element={<ListingForm />} />
           </Route>
 
-          {/* Admin surfaces are protected by RoleRoute as well as hidden from
-              member navigation. A signed-in non-admin is redirected away by the
-              guard, so typing the URL directly cannot open the dashboard. */}
           <Route element={<RoleRoute roles={['admin']} />}>
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/properties" element={<AdminDashboard />} />

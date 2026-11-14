@@ -1,7 +1,5 @@
 import mongoose from 'mongoose';
 
-// Images have no _id of their own; the publicId lets us delete them later
-// from Cloudinary (or from disk when running without Cloudinary configured).
 const imageSchema = new mongoose.Schema(
   {
     url: { type: String, required: true },
@@ -43,8 +41,6 @@ const listingSchema = new mongoose.Schema(
     amenities: { type: [String], default: [] },
     images: { type: [imageSchema], default: [] },
 
-    // GeoJSON point [lng, lat] used for the map. Optional: listings without
-    // coordinates simply do not appear on the map.
     location: {
       type: { type: String, enum: ['Point'] },
       coordinates: { type: [Number] },
@@ -52,7 +48,6 @@ const listingSchema = new mongoose.Schema(
 
     agent: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
 
-    // Admin approval (milestone 4) moves listings between these states.
     status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending', index: true },
     rejectionReason: { type: String, trim: true, maxlength: 500 },
     reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -63,7 +58,6 @@ const listingSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Ready for the search milestone; cheap to add now.
 listingSchema.index({ title: 'text', description: 'text', 'address.city': 'text' });
 listingSchema.index({ 'address.city': 1, listingType: 1, propertyType: 1, price: 1 });
 listingSchema.index({ location: '2dsphere' });

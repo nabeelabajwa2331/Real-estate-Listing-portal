@@ -14,8 +14,6 @@ import {
 
 const router = Router();
 
-// Multipart body types: numbers arrive as strings, so isFloat/isInt do the
-// checking and buildPayload() converts them for the schema.
 const rules = [
   body('title').trim().isLength({ min: 5, max: 120 }).withMessage('Enter a title of 5 to 120 characters'),
   body('description')
@@ -38,14 +36,11 @@ const rules = [
 
 const id = () => param('id').isMongoId().withMessage('Invalid listing');
 
-// Browsing the catalogue requires an account. A shared detail link still opens
-// for guests, but only the photos are returned (see getListing).
 router.get('/', protect, getListings);
 
 // The signed-in agent's own listings. Must come before '/:id'.
 router.get('/mine', protect, authorize('agent', 'admin'), getMyListings);
 
-// Public detail (owner/admin can also see pending or rejected listings)
 router.get('/:id', optionalProtect, [id()], validate, getListing);
 
 router.post(

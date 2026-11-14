@@ -22,7 +22,6 @@ const publicUser = (u) => ({
 const otherParticipant = (conversation, userId) =>
   conversation.participants.find((p) => p._id.toString() !== userId.toString());
 
-// Shapes a conversation for the list view.
 const summarize = (conversation, userId) => {
   const other = otherParticipant(conversation, userId);
   const last = conversation.messages[conversation.messages.length - 1];
@@ -50,11 +49,6 @@ export const getConversations = async (req, res) => {
   res.json({ conversations: conversations.map((c) => summarize(c, req.user._id)) });
 };
 
-// POST /api/chat/conversations  { userId, listingId?, body? }
-//
-// A chat is only created when the first message is actually sent. Calling this
-// endpoint without a body returns an existing thread (or a non-persisted draft)
-// so opening the composer never leaves an empty conversation in the database.
 export const startConversation = async (req, res) => {
   if (isDemoBuyer(req.user)) {
     return res.status(403).json({ message: DEMO_BUYER_BLOCKED });
@@ -72,8 +66,6 @@ export const startConversation = async (req, res) => {
     return res.status(403).json({ message: DEMO_BUYER_RECIPIENT_BLOCKED });
   }
 
-  // Members and agents can only initiate a conversation with an agent. Admins
-  // may also reply to a member. Admins are never a chat target for members.
   if (other.role === 'admin') {
     return res.status(403).json({ message: 'You cannot start a conversation with an administrator' });
   }
@@ -81,8 +73,6 @@ export const startConversation = async (req, res) => {
     return res.status(403).json({ message: 'You can only start a conversation with an agent' });
   }
 
-  // When the chat starts from a listing, keep that context on the conversation
-  // and make sure the listing really belongs to the agent being contacted.
   let listing = null;
   if (listingId) {
     listing = await Listing.findById(listingId).select('title images address agent status');
@@ -100,7 +90,6 @@ export const startConversation = async (req, res) => {
 
   if (!conversation) {
     if (!firstMessage) {
-      // Nothing is written until the user actually sends something.
       return res.json({
         conversation: {
           id: null,
@@ -123,8 +112,6 @@ export const startConversation = async (req, res) => {
       lastMessageAt: new Date(),
     });
   } else {
-    // Opening the chat from a listing makes that listing the current topic,
-    // so a second property is never discussed under the first one's title.
     const topic = listing?._id || conversation.listing;
     const update = { $set: {} };
     if (listing && String(conversation.listing) !== String(listing._id)) {
@@ -169,7 +156,6 @@ export const getConversation = async (req, res) => {
   const isMember = conversation.participants.some((p) => p._id.toString() === uid.toString());
   if (!isMember) return res.status(403).json({ message: 'You are not part of this conversation' });
 
-  // Mark unread messages from the other party as read.
   const unreadIds = conversation.messages
     .filter((m) => m.sender?._id?.toString() !== uid.toString() && !m.readAt)
     .map((m) => m._id);
@@ -208,8 +194,6 @@ export const sendMessage = async (req, res) => {
   const isMember = conversation.participants.some((p) => p.toString() === uid.toString());
   if (!isMember) return res.status(403).json({ message: 'You are not part of this conversation' });
 
-  // Keep any existing conversation with the sample buyer read-only for the
-  // agent as well, so neither side can chat with it.
   const demoParticipant = await User.exists({
     _id: { $in: conversation.participants },
     ...demoBuyerQuery,
@@ -225,7 +209,6 @@ export const sendMessage = async (req, res) => {
         messages: {
           sender: uid,
           body: req.body.body,
-          // Tag the message with the listing being discussed right now.
           ...(conversation.listing ? { listing: conversation.listing } : {}),
         },
       },
@@ -243,8 +226,6 @@ export const sendMessage = async (req, res) => {
 export const getUnreadCount = async (req, res) => {
   const uid = req.user._id;
 
-  // Counted inside MongoDB so the badge never loads every message of every
-  // conversation into the API process.
   const [row] = await Conversation.aggregate([
     { $match: { participants: uid } },
     {
@@ -266,7 +247,6 @@ export const getUnreadCount = async (req, res) => {
     { $group: { _id: null, count: { $sum: 1 }, messages: { $sum: '$unread' } } },
   ]);
 
-  // count: conversations with at least one unread message.
   res.json({ count: row?.count || 0, messages: row?.messages || 0 });
 };
 
@@ -277,8 +257,6 @@ export const searchUsers = async (req, res) => {
   const q = String(req.query.q || '').trim();
   if (q.length < 2) return res.json({ users: [] });
 
-  // Names only — never search by, or expose, an email address. Members and
-  // agents may only find agents; admins can also find members to reply to.
   const roles = req.user.role === 'admin' ? ['agent', 'user'] : ['agent'];
   const rx = new RegExp(escapeRegex(q), 'i');
   const users = await User.find({
@@ -286,7 +264,6 @@ export const searchUsers = async (req, res) => {
     isActive: true,
     role: { $in: roles },
     name: rx,
-    // Don't advertise the browsing-only sample buyer as a chat target.
     $nor: [{ googleId: DEMO_BUYER_GOOGLE_ID }, { email: DEMO_BUYER_EMAIL }],
   })
     .limit(10)

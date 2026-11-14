@@ -4,7 +4,6 @@ import 'leaflet/dist/leaflet.css';
 import { pinIcon } from './ListingMap.jsx';
 import { DEFAULT_CENTER, DEFAULT_ZOOM, TILE_URL, TILE_ATTRIBUTION } from '../config/map.js';
 
-// Places the pin at the clicked point.
 function ClickHandler({ onPick }) {
   useMapEvents({
     click(e) {
@@ -24,7 +23,6 @@ function Recenter({ position }) {
   return null;
 }
 
-// Small map used in the listing form to set coordinates by clicking or dragging.
 export default function LocationPicker({ lat, lng, onChange }) {
   const hasPoint =
     lat !== '' && lng !== '' && !Number.isNaN(Number(lat)) && !Number.isNaN(Number(lng));

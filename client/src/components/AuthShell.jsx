@@ -6,9 +6,6 @@ const points = [
   ['Save and compare', 'Keep favorites and searches ready for later.'],
 ];
 
-// Shared two-column shell for the sign-in and registration pages. On wide
-// screens the brand story sits on the left and the form on the right; on
-// phones the story collapses into a compact header above the form.
 export default function AuthShell({
   eyebrow = "Pakistan's property portal",
   title,

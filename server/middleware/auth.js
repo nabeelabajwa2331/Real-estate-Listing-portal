@@ -1,7 +1,6 @@
 import User from '../models/User.js';
 import { readTokenCookie, verifyToken } from '../utils/token.js';
 
-// Requires a valid login. Attaches the user to req.user.
 export const protect = async (req, res, next) => {
   const token = readTokenCookie(req);
   if (!token) return res.status(401).json({ message: 'Please sign in to continue' });
@@ -19,7 +18,6 @@ export const protect = async (req, res, next) => {
     return res.status(401).json({ message: 'Your password was changed. Please sign in again' });
   }
   if (!user.isActive) {
-    // The code lets the browser sign the user out instead of retrying.
     return res
       .status(403)
       .json({ message: 'This account has been deactivated', code: 'ACCOUNT_DEACTIVATED' });
@@ -29,9 +27,6 @@ export const protect = async (req, res, next) => {
   next();
 };
 
-// Like protect, but never blocks the request: attaches req.user when a valid
-// cookie is present and simply continues otherwise. Used by public routes that
-// still need to recognise an owner (e.g. viewing a pending listing).
 export const optionalProtect = async (req, res, next) => {
   const token = readTokenCookie(req);
   if (!token) return next();
@@ -46,8 +41,6 @@ export const optionalProtect = async (req, res, next) => {
   next();
 };
 
-// Restricts a route to the given roles. Use after protect.
-// Example: router.post('/', protect, authorize('agent'), createListing)
 export const authorize =
   (...roles) =>
   (req, res, next) => {

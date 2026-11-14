@@ -19,11 +19,6 @@ import { notFound, errorHandler } from './middleware/errorHandler.js';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-// Behind a reverse proxy (PaaS, nginx, etc.), so rate limiting sees the
-// real client IP rather than the proxy's. TRUST_PROXY is the number of proxy
-// hops in front of the app: 1 for Render alone, 2 when Vercel rewrites to
-// Render. Only raise it if every request really passes through that many
-// proxies, otherwise clients can spoof their IP through X-Forwarded-For.
 const trustProxy = Number.parseInt(process.env.TRUST_PROXY ?? '1', 10);
 app.set('trust proxy', Number.isFinite(trustProxy) && trustProxy >= 0 ? trustProxy : 1);
 
@@ -31,15 +26,10 @@ app.use(
   helmet({
     // Images (map tiles, Cloudinary) may be loaded cross-origin.
     crossOriginResourcePolicy: { policy: 'cross-origin' },
-    // Google Identity Services signs in through a popup that posts the
-    // credential back to this page. Helmet's default `same-origin` policy
-    // severs that opener relationship, so allow the popup to talk to us.
     crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        // Google Identity Services loads its script and renders the sign-in
-        // button in an iframe hosted by accounts.google.com.
         scriptSrc: ["'self'", 'https://accounts.google.com', 'https://accounts.google.com/gsi/client'],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://accounts.google.com'],
         imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
@@ -61,12 +51,8 @@ app.use(
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 
-// Locally uploaded images (used when Cloudinary is not configured)
-// Uploaded listing photos never change once written, so let browsers keep
-// them instead of re-downloading them on every visit.
 app.use('/uploads', express.static(path.join(here, 'uploads'), { maxAge: '30d', immutable: true }));
 
-// Broad rate limit for the whole API.
 app.use('/api', apiLimiter);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
@@ -80,8 +66,6 @@ app.use('/api/inquiries', inquiryRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/stats', statsRoutes);
 
-// In production, serve the built React app from this same service and let the
-// client-side router handle any non-API path.
 if (process.env.NODE_ENV === 'production') {
   const clientDist = path.join(here, '..', 'client', 'dist');
   app.use(express.static(clientDist));

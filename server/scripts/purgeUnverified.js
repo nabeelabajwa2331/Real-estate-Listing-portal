@@ -1,5 +1,3 @@
-// Removes accounts that never verified their email (including test/dummy
-// signups). Safe to run repeatedly. Run with: npm run purge-unverified
 import 'dotenv/config';
 import mongoose from 'mongoose';
 import User from '../models/User.js';

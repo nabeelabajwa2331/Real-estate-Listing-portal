@@ -1,6 +1,3 @@
-// Pakistani mobile numbers: 03XX XXXXXXX (11 digits) or +92 3XX XXXXXXX.
-// Formatting (spaces, dashes) and the country-code-only form are accepted, then
-// normalised to the local 03XXXXXXXXX shape used by the database.
 export const normalizePakistaniPhone = (value) => {
   let digits = String(value ?? '').replace(/[^\d+]/g, '');
   if (digits.startsWith('+92')) digits = `0${digits.slice(3)}`;

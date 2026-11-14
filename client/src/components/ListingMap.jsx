@@ -9,7 +9,6 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { formatPrice } from './ListingCard.jsx';
 import { DEFAULT_CENTER, DEFAULT_ZOOM, TILE_URL, TILE_ATTRIBUTION } from '../config/map.js';
 
-// A lightweight HTML pin avoids Leaflet's bundled marker image asset problem.
 export const pinIcon = L.divIcon({
   className: 'map-pin',
   html: '<span class="map-pin-dot"></span>',
@@ -18,7 +17,6 @@ export const pinIcon = L.divIcon({
   popupAnchor: [0, -12],
 });
 
-// Dark-themed cluster bubble showing how many listings it contains.
 const clusterIcon = (cluster) =>
   L.divIcon({
     className: 'map-cluster',
@@ -26,9 +24,6 @@ const clusterIcon = (cluster) =>
     iconSize: [40, 40],
   });
 
-// Marks the map as deliberately used as soon as the visitor touches it. The
-// programmatic fitBounds() that follows a search must not count, otherwise the
-// first result set would immediately filter itself to its own viewport.
 function UserInteraction({ onInteract }) {
   const map = useMap();
   useEffect(() => {
@@ -47,7 +42,6 @@ function UserInteraction({ onInteract }) {
   return null;
 }
 
-// Reports the visible bounds whenever the user stops panning or zooming.
 function BoundsWatcher({ onChange }) {
   const map = useMap();
   useEffect(() => {
@@ -61,8 +55,6 @@ function BoundsWatcher({ onChange }) {
   return null;
 }
 
-// Fits the map to the markers when the search changes (fitKey changes), but not
-// when the user simply pans around — otherwise it would fight the user.
 function FitToMarkers({ points, fitKey }) {
   const map = useMap();
   useEffect(() => {

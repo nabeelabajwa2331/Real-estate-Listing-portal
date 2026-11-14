@@ -1,14 +1,10 @@
 import User from '../models/User.js';
 import Listing from '../models/Listing.js';
 
-// Removes favorites that point at listings which no longer exist, so the stored
-// list and every count derived from it stay accurate.
 async function pruneMissingFavorites(user) {
   const ids = user.favorites.map(String);
   if (ids.length === 0) return ids;
 
-  // Only approved listings are publicly browsable, so pending/rejected records
-  // must not linger in a member's saved list or count.
   const existing = await Listing.find({ _id: { $in: ids }, status: 'approved' }).select('_id').lean();
   const found = new Set(existing.map((listing) => listing._id.toString()));
   const stale = ids.filter((id) => !found.has(id));
@@ -37,7 +33,6 @@ export const getFavorites = async (req, res) => {
   );
   const byId = new Map(listings.map((listing) => [listing._id.toString(), listing]));
 
-  // Keep the order the user saved them in (newest first).
   res.json({
     listings: [...ids].reverse().map((id) => byId.get(id)).filter(Boolean),
   });
@@ -47,12 +42,9 @@ export const getFavorites = async (req, res) => {
 export const addFavorite = async (req, res) => {
   const { listingId } = req.params;
 
-  // Don't let a stale, made-up or not-yet-public id end up in the saved list.
   const exists = await Listing.exists({ _id: listingId, status: 'approved' });
   if (!exists) return res.status(404).json({ message: 'Listing not found' });
 
-  // $addToSet makes repeated clicks (or retries) idempotent: one listing can
-  // never be counted twice.
   await User.findByIdAndUpdate(req.user._id, { $addToSet: { favorites: listingId } });
   res.status(201).json({ message: 'Saved to favorites' });
 };

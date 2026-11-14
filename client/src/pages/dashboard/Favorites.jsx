@@ -8,8 +8,6 @@ const heartIcon = (
   </svg>
 );
 
-// Saved items are read from the shared favorites store, so a listing saved or
-// removed anywhere in the app appears here (and the counts) immediately.
 export default function Favorites() {
   const { items, count, loaded, error, refresh } = useFavorites();
 

@@ -5,7 +5,6 @@ import SmartImage from '../../components/SmartImage.jsx';
 import { assetUrl } from '../../config/api.js';
 import { useTitle } from '../../utils/useTitle.js';
 
-// The map picker pulls in Leaflet, so load it only when the form is open.
 const LocationPicker = lazy(() => import('../../components/LocationPicker.jsx'));
 
 const empty = {
@@ -47,7 +46,6 @@ export default function ListingForm() {
   const [status, setStatus] = useState(''); // current review status when editing
   const [geo, setGeo] = useState({ busy: false, error: '', label: '' });
 
-  // Load the listing when editing.
   useEffect(() => {
     if (!editing) return undefined;
     let active = true;
@@ -86,7 +84,6 @@ export default function ListingForm() {
     };
   }, [editing, id]);
 
-  // Object URLs for the new files, revoked when the selection changes.
   const previews = useMemo(() => files.map((file) => ({ file, url: URL.createObjectURL(file) })), [files]);
   useEffect(() => () => previews.forEach((p) => URL.revokeObjectURL(p.url)), [previews]);
 
@@ -131,7 +128,6 @@ export default function ListingForm() {
     e.preventDefault();
     setError('');
 
-    // Match the server-side completeness rules before sending anything.
     if (!form.street.trim()) {
       setError('Add the street address so buyers know where the property is.');
       window.scrollTo({ top: 0, behavior: 'smooth' });

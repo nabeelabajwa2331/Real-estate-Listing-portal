@@ -17,8 +17,6 @@ const parseCookies = (header = '') =>
       .filter(Boolean)
   );
 
-// Attaches Socket.IO to the existing http server and authenticates each
-// connection with the same httpOnly JWT cookie the REST API uses.
 export function initSocket(server) {
   io = new Server(server, {
     cors: {
@@ -46,7 +44,6 @@ export function initSocket(server) {
   });
 
   io.on('connection', (socket) => {
-    // Every user gets their own room so messages can be pushed to them.
     socket.join(`user:${socket.userId}`);
 
     onlineUsers.set(socket.userId, (onlineUsers.get(socket.userId) || 0) + 1);
@@ -66,7 +63,6 @@ export const isUserOnline = (userId) => onlineUsers.has(String(userId));
 
 export const getOnlineCount = () => onlineUsers.size;
 
-// Pushes an event to one user (all of that user's open tabs).
 export const emitToUser = (userId, event, payload) => {
   if (io) io.to(`user:${userId}`).emit(event, payload);
 };

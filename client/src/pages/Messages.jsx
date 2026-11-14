@@ -40,8 +40,6 @@ export default function Messages() {
   const { chatId, inquiryId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // A listing's "Chat with agent" button opens a draft composer here. Nothing
-  // is written to the database until the first message is sent.
   const draftTo = searchParams.get('to');
   const draftListing = searchParams.get('listing');
   const draftName = searchParams.get('name');
@@ -107,9 +105,6 @@ export default function Messages() {
     };
   }, [loadList, inquiryTick, chatTick]);
 
-  // "Chat with agent" lands here with ?to=. If the two people already have a
-  // thread, open it (so the history is visible) instead of an empty draft. The
-  // server attaches the listing as context; nothing is created without a body.
   const [draftChecking, setDraftChecking] = useState(false);
   useEffect(() => {
     if (!draftTo || chatId || inquiryId || demoBuyer) return undefined;
@@ -130,16 +125,12 @@ export default function Messages() {
     };
   }, [draftTo, draftListing, chatId, inquiryId, demoBuyer, navigate]);
 
-  // Open a direct chat (and mark it read).
   useEffect(() => {
     if (!chatId) {
       setActiveChat(null);
       return undefined;
     }
     let active = true;
-    // Drop the previous thread when switching, so its messages are never shown
-    // under the new conversation (a real-time refresh of the same thread keeps
-    // it on screen).
     setActiveChat((current) => (current && String(current.id) === chatId ? current : null));
     setThreadLoading(true);
     setThreadError('');
@@ -157,7 +148,6 @@ export default function Messages() {
     };
   }, [chatId, chatTick, refreshChat]);
 
-  // Open a listing inquiry (and mark it read).
   useEffect(() => {
     if (!inquiryId) {
       setActiveInquiry(null);
@@ -181,7 +171,6 @@ export default function Messages() {
     };
   }, [inquiryId, inquiryTick, refreshInquiries]);
 
-  // Keep the newest message in view.
   useEffect(() => {
     const el = messagesRef.current;
     if (el) el.scrollTop = el.scrollHeight;
@@ -299,7 +288,6 @@ export default function Messages() {
     setShowNew(false);
     setSearch('');
     setResults([]);
-    // Open a draft composer; the conversation is created on first send.
     const params = new URLSearchParams({ to: person.id, name: person.name || 'Agent' });
     navigate(`/messages?${params.toString()}`);
   };
@@ -311,7 +299,6 @@ export default function Messages() {
     setThreadError('');
     try {
       if (activeKind === 'new') {
-        // The first send is what creates the thread (with the listing context).
         const { data } = await api.post('/chat/conversations', {
           userId: draftTo,
           listingId: draftListing || undefined,
@@ -517,8 +504,6 @@ export default function Messages() {
 
                   {activeMessages.map((msg, index) => {
                     const mine = String(msg.sender?._id) === user.id;
-                    // In a direct chat, mark where the conversation moved on to
-                    // a different listing.
                     const topic = activeKind === 'chat' && msg.listing?._id ? msg.listing : null;
                     const previousTopic = activeMessages[index - 1]?.listing?._id;
                     const showTopic = topic && String(topic._id) !== String(previousTopic || '');

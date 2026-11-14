@@ -8,7 +8,6 @@ const CONFIG_MESSAGE =
 
 let scriptPromise = null;
 
-// Load Google Identity Services once and reuse it across the auth pages.
 function loadGoogleScript() {
   if (window.google?.accounts?.id) return Promise.resolve();
   if (scriptPromise) return scriptPromise;
@@ -37,8 +36,6 @@ function loadGoogleScript() {
     script.addEventListener('load', done, { once: true });
     script.addEventListener('error', fail, { once: true });
   }).catch((error) => {
-    // Do not cache a failed load forever: a later mount (or a retry after the
-    // network recovers) should be able to load the script again.
     scriptPromise = null;
     throw error;
   });
@@ -67,9 +64,6 @@ const GoogleIcon = () => (
   </svg>
 );
 
-// Renders Google's official sign-in button. The client ID is fetched from the
-// server at runtime so enabling Google sign-in only requires GOOGLE_CLIENT_ID
-// on the API (VITE_GOOGLE_CLIENT_ID remains a fallback for static hosting).
 export default function GoogleAuthButton({ onCredential, onError, divider }) {
   const hostRef = useRef(null);
   const credentialRef = useRef(onCredential);
@@ -85,14 +79,9 @@ export default function GoogleAuthButton({ onCredential, onError, divider }) {
     let active = true;
 
     api
-      // Render's free tier can take 30-60s to wake up, so allow enough time
-      // for the first request instead of showing a false "not configured"
-      // state while the API is still starting.
       .get('/auth/google/config', { timeout: 60000 })
       .then(({ data }) => {
         if (!active) return;
-        // Trust the API when it answers: if it has no client ID, rendering a
-        // button here would only fail later at /auth/google.
         setClientId(String(data?.clientId || '').trim());
       })
       .catch(() => {
@@ -154,7 +143,6 @@ export default function GoogleAuthButton({ onCredential, onError, divider }) {
         return;
       }
 
-      // Configure once; resizing only re-renders the button.
       window.google.accounts.id.initialize({
         client_id: clientId,
         callback: (response) => {
@@ -195,8 +183,6 @@ export default function GoogleAuthButton({ onCredential, onError, divider }) {
     };
   }, [clientId, loadingConfig]);
 
-  // The "or continue with email" divider belongs to the Google option, so it is
-  // only drawn when there is something above it.
   const withDivider = (content) => (
     <>
       {content}
@@ -217,8 +203,6 @@ export default function GoogleAuthButton({ onCredential, onError, divider }) {
     );
   }
 
-  // Google sign-in is not set up on this server: offer email only, rather than
-  // a button that can only fail.
   if (!clientId) {
     if (import.meta.env.DEV) console.info(CONFIG_MESSAGE);
     return null;

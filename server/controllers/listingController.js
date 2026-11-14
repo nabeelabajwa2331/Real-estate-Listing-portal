@@ -12,17 +12,12 @@ const toNumber = (value) => {
   return Number.isNaN(n) ? undefined : n;
 };
 
-// Like toNumber but also rejects Infinity and other non-finite input, so a bad
-// query string (e.g. ?bedrooms=abc) is ignored instead of becoming NaN.
 const toFiniteNumber = (value) => {
   if (value === undefined || value === null || value === '') return undefined;
   const n = Number(value);
   return Number.isFinite(n) ? n : undefined;
 };
 
-// Multipart form fields arrive as strings, so this shapes req.body into the
-// types the schema expects. Only known fields are copied, which also keeps a
-// client from setting things like `agent`, `status` or `views`.
 function buildPayload(body) {
   const address = {};
   for (const key of ['street', 'city', 'state', 'country', 'zip']) {
@@ -54,14 +49,12 @@ function buildPayload(body) {
           .filter(Boolean);
   }
 
-  // Optional map coordinates. Only stored when both are valid numbers.
   const lat = toNumber(body.lat);
   const lng = toNumber(body.lng);
   if (lat !== undefined && lng !== undefined) {
     payload.location = { type: 'Point', coordinates: [lng, lat] };
   }
 
-  // Drop keys that were not sent so a partial update never wipes data.
   for (const key of Object.keys(payload)) {
     if (payload[key] === undefined) delete payload[key];
   }
@@ -71,8 +64,6 @@ function buildPayload(body) {
 const isOwnerOrAdmin = (listing, user) =>
   user.role === 'admin' || listing.agent.toString() === user._id.toString();
 
-// Splits `removeImages` (publicIds the user deleted in the edit form) from the
-// listing's current images.
 function splitImages(existing, removeImages) {
   const removeIds = new Set(
     Array.isArray(removeImages) ? removeImages : removeImages ? [removeImages] : []
@@ -88,9 +79,6 @@ export const createListing = async (req, res) => {
   const payload = buildPayload(req.body);
   const images = await uploadImages(req.files);
 
-  // A public listing must be complete: street + city, map coordinates and at
-  // least one photo. Uploaded files are removed again when the check fails so
-  // an invalid submission never leaves orphaned images behind.
   const incomplete = listingCompletenessError({
     address: payload.address,
     location: payload.location,
@@ -113,8 +101,6 @@ const SORTS = {
   'area-desc': '-area',
 };
 
-// Builds a { $gte, $lte } range from validated numbers, or null when neither
-// bound is valid.
 const buildRange = (min, max) => {
   const low = toFiniteNumber(min);
   const high = toFiniteNumber(max);
@@ -124,9 +110,6 @@ const buildRange = (min, max) => {
   return Object.keys(range).length ? range : null;
 };
 
-// GET /api/listings  (signed-in members)
-// Filters: city, listingType, propertyType, minPrice, maxPrice, minArea, maxArea,
-// bedrooms, q, sort, page, limit, and map bounds (north, south, east, west).
 export const getListings = async (req, res) => {
   const { city, listingType, propertyType, bedrooms, q, north, south, east, west } = req.query;
   const page = Math.max(1, toFiniteNumber(req.query.page) || 1);
@@ -134,8 +117,6 @@ export const getListings = async (req, res) => {
   const sort = SORTS[req.query.sort] || SORTS.newest;
 
   const filter = { status: 'approved' };
-  // The location box accepts a city or an area ("DHA", "DHA Lahore"). Every
-  // word must appear somewhere in the city, street or province.
   const words = String(city || '')
     .trim()
     .split(/\s+/)
@@ -161,7 +142,6 @@ export const getListings = async (req, res) => {
 
   if (q) filter.$text = { $search: q };
 
-  // Only listings inside the visible map area (all four bounds must be valid).
   const box = {
     north: toFiniteNumber(north),
     south: toFiniteNumber(south),
@@ -173,8 +153,6 @@ export const getListings = async (req, res) => {
   }
 
   const [listings, total] = await Promise.all([
-    // Contact details are deliberately not included in the public list: they
-    // are only returned from the detail endpoint to signed-in users.
     Listing.find(filter)
       .sort(sort)
       .skip((page - 1) * limit)
@@ -192,12 +170,7 @@ export const getMyListings = async (req, res) => {
   res.json({ listings });
 };
 
-// GET /api/listings/:id  (shared links stay public for guests, but only the
-// photos are returned; pending/rejected listings are visible only to their
-// owner or an admin)
 export const getListing = async (req, res) => {
-  // The agent's phone and email are private and only populated for signed-in
-  // users.
   const agentFields = req.user ? 'name phone email avatar createdAt' : 'name avatar createdAt';
   const listing = await Listing.findById(req.params.id).populate('agent', agentFields);
   if (!listing) return res.status(404).json({ message: 'Listing not found' });
@@ -208,11 +181,6 @@ export const getListing = async (req, res) => {
     return res.status(404).json({ message: 'Listing not found' });
   }
 
-  // Count at most one view per viewer per listing per day. The unique index on
-  // (listing, viewerKey) rejects a duplicate; the TTL index expires the row
-  // after 24 hours. A raw IP address is never stored, only a salted hash.
-  // The listing's own agent and admins reviewing it are not buyers, so their
-  // visits are not counted.
   if (!isOwner) {
     const key = viewerKey({ userId: req.user?._id, ip: req.ip });
     try {
@@ -224,8 +192,6 @@ export const getListing = async (req, res) => {
     }
   }
 
-  // Visitors who are not signed in only get the photos. Price, address,
-  // description and the agent's contact details require an account.
   if (!req.user) {
     return res.json({
       listing: {
@@ -248,7 +214,6 @@ export const updateListing = async (req, res) => {
 
   const payload = buildPayload(req.body);
   if (payload.address) {
-    // Merge so a form that omits part of the address does not erase it.
     payload.address = { ...listing.address.toObject(), ...payload.address };
   }
   Object.assign(listing, payload);
@@ -263,8 +228,6 @@ export const updateListing = async (req, res) => {
   const added = await uploadImages(req.files);
   const nextImages = [...keep, ...added];
 
-  // Edits must leave the listing complete too. Validate before removing the
-  // old photos so a rejected save never destroys the current images.
   const incomplete = listingCompletenessError({
     address: listing.address,
     location: listing.location,
@@ -293,7 +256,6 @@ export const deleteListing = async (req, res) => {
   await Promise.all(listing.images.map(deleteImage));
   await listing.deleteOne();
 
-  // A deleted listing must not keep inflating anyone's saved-items count.
   await User.updateMany({ favorites: listing._id }, { $pull: { favorites: listing._id } });
 
   res.json({ message: 'Listing deleted' });

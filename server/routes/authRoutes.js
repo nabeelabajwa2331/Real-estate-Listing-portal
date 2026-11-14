@@ -24,12 +24,7 @@ import {
 
 const router = Router();
 
-// Reusable validation rules. Each is a function because a validation chain
-// is mutable: calling .optional() on a shared chain would change it everywhere.
 const email = () => body('email').trim().isEmail().withMessage('Enter a valid email').toLowerCase();
-// Registration additionally rejects placeholder and disposable domains, and
-// checks that the domain can actually receive mail (MX/A record), so random
-// addresses on non-existent domains cannot sign up.
 const realEmail = () =>
   email()
     .custom((value) => {
@@ -99,8 +94,6 @@ router.get('/me', protect, getMe);
 router.put(
   '/me',
   protect,
-  // Phone stays optional here: Google accounts have none, and they must still
-  // be able to update their name or photo.
   [
     name().optional(),
     phone().optional({ values: 'falsy' }),

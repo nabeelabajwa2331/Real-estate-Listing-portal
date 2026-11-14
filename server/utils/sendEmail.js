@@ -3,7 +3,6 @@ import nodemailer from 'nodemailer';
 let smtpTransport;
 let testTransport;
 
-// Real delivery, used when SMTP_* is configured.
 function getSmtpTransport() {
   if (!smtpTransport) {
     smtpTransport = nodemailer.createTransport({
@@ -16,7 +15,6 @@ function getSmtpTransport() {
   return smtpTransport;
 }
 
-// A throwaway Ethereal inbox for development. Lazily created and cached.
 async function getTestTransport() {
   if (!testTransport) {
     const account = await nodemailer.createTestAccount();
@@ -34,7 +32,6 @@ async function getTestTransport() {
 export default async function sendEmail({ to, subject, text }) {
   const from = process.env.EMAIL_FROM || process.env.SMTP_USER || 'no-reply@example.com';
 
-  // 1. Real delivery — goes to the recipient's own inbox.
   if (process.env.SMTP_HOST) {
     await getSmtpTransport().sendMail({ from, to, subject, text });
     return;
@@ -45,8 +42,6 @@ export default async function sendEmail({ to, subject, text }) {
     throw new Error('SMTP is not configured; refusing to pretend an email was sent');
   }
 
-  // 2. Development: capture in an Ethereal inbox and print a preview link.
-  //    Set EMAIL_TRANSPORT=console to skip this and just print the message.
   if ((process.env.EMAIL_TRANSPORT || 'ethereal') !== 'console') {
     try {
       const transport = await getTestTransport();
@@ -61,7 +56,6 @@ export default async function sendEmail({ to, subject, text }) {
     }
   }
 
-  // 3. Last resort (development only): print to the terminal.
   console.log('\n--- EMAIL (SMTP not configured, printed instead) ---');
   console.log(`To: ${to}\nSubject: ${subject}\n\n${text}`);
   console.log('----------------------------------------------------\n');

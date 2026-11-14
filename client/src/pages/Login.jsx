@@ -14,10 +14,6 @@ export default function Login() {
   const [searchParams] = useSearchParams();
   useTitle('Sign in');
 
-  // Keep the full destination (including filters) so a direct saved-items URL
-  // or a deep link returns the user to exactly where they were going. The
-  // ?next= value is validated against open redirects; the older state.from
-  // flow is still honoured for bookmarks created before this change.
   const from =
     safeNextPath(searchParams.get('next')) || safeNextPath(locationToPath(location.state?.from));
 
@@ -45,7 +41,6 @@ export default function Login() {
       setGoogleBusy(false);
     }
   };
-
 
   const onSubmit = async (e) => {
     e.preventDefault();

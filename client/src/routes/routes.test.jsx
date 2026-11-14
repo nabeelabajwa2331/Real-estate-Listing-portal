@@ -10,7 +10,6 @@ vi.mock('../context/AuthContext.jsx', () => ({
   homeForRole: (role) => ({ admin: '/admin', agent: '/agent', user: '/dashboard' })[role] || '/',
 }));
 
-// Prints where the router ended up so redirects can be asserted.
 function Where() {
   const location = useLocation();
   return <p data-testid="where">{`${location.pathname}${location.search}`}</p>;

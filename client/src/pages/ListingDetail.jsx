@@ -59,8 +59,6 @@ export default function ListingDetail() {
 
   if (!listing) return <p className="muted center">Listing unavailable.</p>;
 
-  // Visitors who are not signed in may only see the photos. The API enforces
-  // this too, so the rest of the listing is not even sent to the browser.
   if (!user) {
     return (
       <article className="listing-detail">
@@ -93,8 +91,6 @@ export default function ListingDetail() {
 
   const agent = listing.agent;
   const isOwner = user && (user.role === 'admin' || agent?._id === user.id);
-  // Only the listing's agent can open the edit form (it lives in the agent
-  // workspace); admins moderate from the approval queue instead.
   const canEdit = user?.role === 'agent' && agent?._id === user.id;
   const saved = Boolean(user && favorites?.isFavorite(listing._id));
   const demoBuyer = Boolean(user?.isDemoBuyer);
@@ -122,9 +118,6 @@ export default function ListingDetail() {
     if (!ok) setFavoriteError('Could not update saved items. Please try again.');
   };
 
-  // Opening the composer must not create an empty conversation. The thread is
-  // created by the first message sent from the Messages page, with this listing
-  // attached as context.
   const startChat = () => {
     if (!user) {
       navigate(loginPath(nextPath));

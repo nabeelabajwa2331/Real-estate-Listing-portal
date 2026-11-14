@@ -1,9 +1,6 @@
-// Small pure helpers shared by controllers, kept here so they are easy to test.
-
 export const escapeRegex = (value = '') =>
   String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-// The only browse query keys a saved search may store.
 export const ALLOWED_SEARCH_KEYS = [
   'city',
   'listingType',
@@ -21,7 +18,6 @@ export const ALLOWED_SEARCH_KEYS = [
   'west',
 ];
 
-// Whitelists and trims saved-search params so replaying them is always safe.
 export const cleanSearchParams = (input = {}) => {
   const out = {};
   for (const key of ALLOWED_SEARCH_KEYS) {
@@ -32,8 +28,6 @@ export const cleanSearchParams = (input = {}) => {
   return out;
 };
 
-// True when two cleaned param objects describe the same search. Used to avoid
-// storing duplicate saved searches when the button is pressed twice.
 export const sameSearchParams = (a = {}, b = {}) => {
   const keysA = Object.keys(a).sort();
   const keysB = Object.keys(b).sort();

@@ -29,8 +29,6 @@ export const clearTokenCookie = (res) => res.clearCookie(COOKIE_NAME, cookieOpti
 
 export const readTokenCookie = (req) => req.cookies?.[COOKIE_NAME];
 
-// Random tokens for email verification and password reset.
-// The raw token goes in the emailed link; only its hash is saved.
 export const hashToken = (raw) => crypto.createHash('sha256').update(raw).digest('hex');
 
 export const createRandomToken = () => {

@@ -100,7 +100,6 @@ describe('favorites store', () => {
     const third = store.getState().toggle('a', { _id: 'a' }); // save again
     await Promise.all([first, second, third]);
 
-    // The failed first request must not undo the user's final choice.
     expect(store.getState().isFavorite('a')).toBe(true);
     expect(store.getState().error).toBe('');
   });

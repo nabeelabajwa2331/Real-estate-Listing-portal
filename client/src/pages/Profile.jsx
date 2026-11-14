@@ -119,8 +119,6 @@ export default function Profile() {
     e.preventDefault();
     setError('');
     setNotice('');
-    // Phone is optional (Google accounts start without one), but must be valid
-    // when it is filled in.
     if (form.phone.trim() && !isValidNationalPhone(form.phone)) {
       setError(PHONE_MESSAGE);
       return;

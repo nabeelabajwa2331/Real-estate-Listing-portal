@@ -10,9 +10,6 @@ import { isAllowedImage } from './imageType.js';
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const uploadsDir = path.join(here, '..', 'uploads');
 
-// Cloudinary is used only when all three values are present. Otherwise we fall
-// back to saving files under server/uploads and serving them locally, so the
-// whole flow still works during development without an account.
 const cloudinaryReady = Boolean(
   process.env.CLOUDINARY_CLOUD_NAME &&
     process.env.CLOUDINARY_API_KEY &&
@@ -27,8 +24,6 @@ if (cloudinaryReady) {
   });
 }
 
-// The MIME type is only a hint from the browser; uploadImages() checks the
-// actual bytes and re-encodes every accepted image before it is stored.
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 export const upload = multer({
@@ -48,8 +43,6 @@ const processingError = (message = 'That image could not be processed. Upload a 
   return error;
 };
 
-// Re-encodes the bitmap through Sharp. This strips EXIF/metadata, rejects
-// malformed files, normalises orientation and bounds the stored dimensions.
 const normaliseImage = async (buffer, options = {}) => {
   if (!isAllowedImage(buffer)) throw processingError();
 
@@ -94,9 +87,6 @@ const saveLocally = async (buffer) => {
   return { url: `/uploads/${name}`, publicId: name };
 };
 
-// Validates, re-encodes and stores every file. Returns [{ url, publicId }].
-// Options: width/height/fit for the resize (e.g. a square avatar with
-// fit: 'cover'), quality, and the Cloudinary folder.
 export const uploadImages = async (files = [], options = {}) => {
   const { folder, ...resize } = options;
   const prepared = await Promise.all(
@@ -108,7 +98,6 @@ export const uploadImages = async (files = [], options = {}) => {
   return prepared;
 };
 
-// Removes one stored image. Safe to call with a missing/invalid image.
 export const deleteImage = async (image) => {
   if (!image?.publicId) return;
   try {

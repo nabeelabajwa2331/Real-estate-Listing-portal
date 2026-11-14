@@ -1,5 +1,3 @@
-// Creates (or promotes) the admin account from the ADMIN_* values in .env.
-// Run with: npm run create-admin
 import 'dotenv/config';
 import mongoose from 'mongoose';
 import User from '../models/User.js';

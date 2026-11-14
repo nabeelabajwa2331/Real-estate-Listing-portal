@@ -1,6 +1,3 @@
-// The sample buyer created by the Google fallback is browsing-only. It must
-// never be able to contact agents or start a conversation, even by calling the
-// API directly.
 export const DEMO_BUYER_EMAIL = 'demo.google@example.com';
 export const DEMO_BUYER_GOOGLE_ID = 'demo-google-user';
 
@@ -15,7 +12,6 @@ export const isDemoBuyer = (user) =>
   (user.googleId === DEMO_BUYER_GOOGLE_ID ||
     String(user.email || '').trim().toLowerCase() === DEMO_BUYER_EMAIL);
 
-// Reusable Mongo filter for checks that only have participant ids.
 export const demoBuyerQuery = {
   role: 'user',
   $or: [{ googleId: DEMO_BUYER_GOOGLE_ID }, { email: DEMO_BUYER_EMAIL }],

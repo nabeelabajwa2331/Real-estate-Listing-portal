@@ -17,13 +17,8 @@ const RESET_MINUTES = 30;
 const VERIFY_HOURS = Number(process.env.VERIFY_EXPIRES_HOURS || 24);
 const verifyExpiry = () => new Date(Date.now() + VERIFY_HOURS * 60 * 60 * 1000);
 
-// When false (useful in development), registration creates a ready-to-use
-// account with no email step. Keep it true in production so real users must
-// confirm their email.
 const REQUIRE_EMAIL_VERIFICATION = process.env.REQUIRE_EMAIL_VERIFICATION !== 'false';
 
-// Specific addresses that never need email verification (e.g. test accounts),
-// even when verification is otherwise required.
 const bypassList = () =>
   (process.env.VERIFICATION_BYPASS_EMAILS || '')
     .split(',')
@@ -33,7 +28,6 @@ const bypassList = () =>
 const bypassesVerification = (email) =>
   !REQUIRE_EMAIL_VERIFICATION || bypassList().includes(String(email).toLowerCase());
 
-// The fields that are safe to send to the browser
 const publicUser = (u) => ({
   id: u._id,
   name: u.name,
@@ -43,7 +37,6 @@ const publicUser = (u) => ({
   isVerified: u.isVerified,
   createdAt: u.createdAt,
   avatar: u.avatar?.url || null,
-  // Lets the browser switch the sample Google buyer into its read-only UI.
   isDemoBuyer: isDemoBuyer(u),
 });
 
@@ -67,8 +60,6 @@ export const register = async (req, res) => {
 
   const resolvedRole = role === 'agent' ? 'agent' : 'user'; // admin can never be chosen here
 
-  // Verification disabled (development) or this address is explicitly bypassed:
-  // create a usable account immediately, no email step.
   if (bypassesVerification(email)) {
     await User.create({ name, email, phone: normalizedPhone, password, role: resolvedRole, isVerified: true });
     return res.status(201).json({ message: 'Account created. You can sign in now.' });
@@ -77,8 +68,6 @@ export const register = async (req, res) => {
   const { raw, hashed } = createRandomToken();
   const passwordHash = await bcrypt.hash(password, 12);
 
-  // No real account is created yet — the signup is held as pending until the
-  // email is verified. Unverified signups expire automatically.
   await PendingUser.findOneAndUpdate(
     { email },
     {
@@ -110,7 +99,6 @@ export const register = async (req, res) => {
 export const verifyEmail = async (req, res) => {
   const hashed = hashToken(req.params.token);
 
-  // Current flow: the account is created only now that the email is verified.
   const pending = await PendingUser.findOne({ verifyToken: hashed }).select('+verifyToken');
   if (pending) {
     if (pending.verifyTokenExpires < new Date()) {
@@ -120,8 +108,6 @@ export const verifyEmail = async (req, res) => {
         .json({ message: 'This verification link has expired. Request a new one.', code: 'VERIFY_EXPIRED' });
     }
 
-    // The same address may have been activated another way in the meantime
-    // (for example Google sign-in). The account exists, so the signup is done.
     if (await User.exists({ email: pending.email })) {
       await PendingUser.deleteOne({ _id: pending._id });
       return res.json({ message: 'This email is already active. You can sign in now.' });
@@ -169,8 +155,6 @@ export const verifyEmail = async (req, res) => {
 export const resendVerification = async (req, res) => {
   const { email } = req.body;
 
-  // A delivery failure is logged rather than surfaced: the answer must be the
-  // same whether or not the address exists.
   const send = (recipient, raw) =>
     sendVerificationEmail(recipient, raw).catch((err) =>
       console.error('Verification email failed:', err.message)
@@ -204,7 +188,6 @@ export const login = async (req, res) => {
 
   const user = await User.findOne({ email }).select('+password');
   if (!user) {
-    // A pending signup explains the missing account; prompt them to verify.
     if (await PendingUser.findOne({ email })) {
       return res
         .status(403)
@@ -229,14 +212,8 @@ export const login = async (req, res) => {
   res.json({ user: publicUser(user) });
 };
 
-// GET /api/auth/google/config
-// The browser needs the public OAuth client ID to render Google's button. It
-// is read at runtime so a deployment only has to set GOOGLE_CLIENT_ID on the
-// server instead of rebuilding the client with VITE_GOOGLE_CLIENT_ID.
 export const googleConfig = (req, res) => {
   const clientId = String(process.env.GOOGLE_CLIENT_ID || '').trim();
-  // Keep this fresh so changing GOOGLE_CLIENT_ID takes effect on the next page
-  // load instead of waiting for a cached "not configured" response to expire.
   res.set('Cache-Control', 'no-store');
   res.json({
     clientId: clientId || null,
@@ -244,14 +221,8 @@ export const googleConfig = (req, res) => {
   });
 };
 
-// POST /api/auth/google
-// Verifies the Google ID token from the browser and signs the user in. A new
-// account is created on first use; an existing account with the same verified
-// email is linked to the Google identity.
 export const googleLogin = async (req, res) => {
   const { credential } = req.body || {};
-  // The register page lets a new Google user choose buyer or agent. Existing
-  // accounts keep their current role.
   const requestedRole = req.body?.role === 'agent' ? 'agent' : 'user';
   const clientId = String(process.env.GOOGLE_CLIENT_ID || '').trim();
 
@@ -279,10 +250,6 @@ export const googleLogin = async (req, res) => {
     return res.status(502).json({ message: 'Could not reach Google. Please try again.' });
   }
 
-  // `aud` is normally a string, but accept an array in case Google returns a
-  // multi-audience token. Every other check is the minimum needed to trust the
-  // identity: the token must be for this app, issued by Google, and carry a
-  // verified email address.
   const audiences = Array.isArray(profile.aud) ? profile.aud : [profile.aud];
   const validIssuer = ['accounts.google.com', 'https://accounts.google.com'].includes(profile.iss);
   const emailVerified = profile.email_verified === true || profile.email_verified === 'true';
@@ -307,8 +274,6 @@ export const googleLogin = async (req, res) => {
       name,
       email,
       phone: '',
-      // Google accounts never use password sign-in, so store an unguessable
-      // random password instead of leaving the required field empty.
       password: crypto.randomBytes(32).toString('hex'),
       role: requestedRole,
       isVerified: true,

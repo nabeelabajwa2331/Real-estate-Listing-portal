@@ -96,7 +96,6 @@ export default function DashboardLayout() {
     setMenuOpen(false);
   }, [location.pathname]);
 
-  // Escape closes the drawer and the page behind it is locked while open.
   useEffect(() => {
     if (!menuOpen) return undefined;
     const onKeyDown = (event) => {

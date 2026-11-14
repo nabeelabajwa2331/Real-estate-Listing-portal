@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { assetUrl } from '../config/api.js';
 import SmartImage from './SmartImage.jsx';
 
-// Main photo plus a thumbnail strip, with prev/next controls. Renders a
-// graceful placeholder when a listing has no images yet.
 export default function ImageGallery({ images = [], title = '' }) {
   const [active, setActive] = useState(0);
 

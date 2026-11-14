@@ -1,7 +1,5 @@
 import mongoose from 'mongoose';
 
-// A stored search is just the query the browse page used, so it can be replayed
-// later. `params` is a free-form object but the controller whitelists its keys.
 const savedSearchSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },

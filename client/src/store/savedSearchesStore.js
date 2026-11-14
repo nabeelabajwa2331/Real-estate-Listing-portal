@@ -1,17 +1,8 @@
 import { create } from 'zustand';
 import api, { errorMessage } from '../api/axios.js';
 
-// Global store for the signed-in user's saved searches (Zustand). The list
-// (and its count) is loaded once per account and updated in place when a
-// search is saved or deleted, so the overview metric and the dashboard sidebar
-// badge change without a page refresh.
-//
-// `createSavedSearchesStore` is exported so tests can build an isolated instance.
 export function createSavedSearchesStore(client = api) {
   let generation = 0;
-  // Local edits made since the page loaded. A refresh merges these on top of
-  // its snapshot so an older server response can never resurrect a deleted
-  // search or hide one that was just created.
   const removedIds = new Set();
   const createdItems = new Map();
 
@@ -62,7 +53,6 @@ export function createSavedSearchesStore(client = api) {
       saving: false,
       error: '',
 
-      // Called by <SavedSearchesProvider> whenever the signed-in account changes.
       setUser: (userId) => {
         const next = userId || null;
         if (get().userId === next && (next === null || get().loaded || get().loading)) return;
@@ -73,9 +63,6 @@ export function createSavedSearchesStore(client = api) {
 
       refresh,
 
-      // Persists a new search and prepends it to the shared list once the
-      // server confirms it. Re-saving identical criteria returns the existing
-      // record instead of creating a duplicate (the API enforces the same rule).
       create: async (name, params) => {
         set({ saving: true, error: '' });
         try {
@@ -95,8 +82,6 @@ export function createSavedSearchesStore(client = api) {
         }
       },
 
-      // Optimistic delete: the row and every count disappear at once, and are
-      // put back if the request fails.
       remove: async (id) => {
         const previous = get().searches;
         const next = previous.filter((item) => item._id !== id);

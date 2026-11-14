@@ -1,8 +1,3 @@
-// Post-login redirects are carried in a `?next=` query parameter so they survive
-// a full page reload and can be shared between the login and registration
-// screens. Only same-origin absolute paths are accepted: an open redirect such
-// as `//evil.example` or `https://evil.example` is rejected.
-
 const AUTH_PATHS = /^\/(login|register|forgot-password|reset-password|verify)(\/|$|\?)/;
 
 export const safeNextPath = (value) => {
@@ -26,8 +21,6 @@ const withNext = (path, next) => {
 export const loginPath = (next) => withNext('/login', next);
 export const registerPath = (next) => withNext('/register', next);
 
-// Reconstructs the full destination from a react-router location object, used
-// by the legacy `state.from` flow as well as the query-parameter flow.
 export const locationToPath = (location) => {
   if (!location?.pathname) return null;
   return `${location.pathname}${location.search || ''}${location.hash || ''}`;

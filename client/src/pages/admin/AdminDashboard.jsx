@@ -328,7 +328,6 @@ function AdminOverview({ counts }) {
   useEffect(() => {
     let active = true;
     api
-      // Only the totals are needed here, not the user list itself.
       .get('/admin/users', { params: { limit: 1 } })
       .then(({ data }) => {
         if (!active) return;
@@ -452,7 +451,6 @@ function ApprovalQueue({ onCountsChange }) {
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  // Loads the first page (or, with `more`, appends the next one).
   const load = async (nextStatus = status, more = false) => {
     const nextPage = more ? page + 1 : 1;
     if (more) setLoadingMore(true);
@@ -654,7 +652,6 @@ function UsersPanel({ fixedRole = '' }) {
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const paramsRef = useRef({ q: '', role: fixedRole });
-  // How many rows are on screen, so the background refresh keeps them all.
   const shownRef = useRef(0);
 
   const PAGE_SIZE = 50;
@@ -895,7 +892,6 @@ function AdminMessages() {
     try {
       const { data } = await api.post('/chat/conversations', { userId: agent.id });
       if (!data.conversation?.id) {
-        // No thread yet: show an empty draft. The first message creates it.
         setThread({
           id: null,
           user: data.conversation?.user || { id: agent.id, name: agent.name, role: 'agent' },
@@ -954,7 +950,6 @@ function AdminMessages() {
       if (conversationId) {
         await api.post(`/chat/conversations/${conversationId}/messages`, { body: draft });
       } else {
-        // First message to this agent creates the conversation.
         const { data: created } = await api.post('/chat/conversations', {
           userId: activeAgentId,
           body: draft,

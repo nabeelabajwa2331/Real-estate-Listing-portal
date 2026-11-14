@@ -1,15 +1,3 @@
-// Seeds demo data so every feature (favorites, saved searches, the admin
-// approval queue, inquiries and chat) can be seen working right away.
-//
-// Creates three ready-to-use accounts and a handful of approved listings with
-// map coordinates, then prints the login details.
-//
-// Run with: npm run seed   (from the server folder)
-//
-// Safety: it refuses to run when NODE_ENV=production unless --allow-production
-// is passed, because it resets the demo accounts and replaces the demo agent's
-// listings. The admin password is never hard-coded: set SEED_ADMIN_PASSWORD, or
-// a random one is generated and printed once.
 import 'dotenv/config';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
@@ -34,16 +22,12 @@ if (process.env.NODE_ENV === 'production' && !process.argv.includes('--allow-pro
 const ADMIN_PASSWORD =
   process.env.SEED_ADMIN_PASSWORD || `Adm-${crypto.randomBytes(9).toString('base64url')}`;
 
-// Passwords meet the 8-character minimum and are hashed by the User model.
-// The agent and buyer are public demo accounts; the admin is not.
 const ACCOUNTS = [
   { name: 'Admin User', email: 'admin@example.com', phone: '03000000001', password: ADMIN_PASSWORD, role: 'admin' },
   { name: 'Ayesha Khan', email: 'agent@example.com', phone: '03000000002', password: 'Agent12345', role: 'agent' },
   { name: 'Bilal Ahmed', email: 'buyer@example.com', phone: '03000000003', password: 'Buyer12345', role: 'user' },
 ];
 
-// Creates the account, or resets an existing one to a known good state so the
-// script can be run repeatedly.
 async function upsertAccount(account) {
   let user = await User.findOne({ email: account.email }).select('+password');
   if (!user) {
@@ -188,7 +172,6 @@ async function seed() {
 
   const [admin, agent, buyer] = await Promise.all(ACCOUNTS.map(upsertAccount));
 
-  // Replace this agent's demo listings so re-runs stay tidy.
   await Listing.deleteMany({ agent: agent._id });
   const listings = await Listing.insertMany(
     buildListings(agent._id).map((listing) => ({ ...listing, agent: agent._id, status: 'approved' }))

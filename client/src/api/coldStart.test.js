@@ -10,7 +10,6 @@ const gatewayError = (config, status = 503) => {
   return err;
 };
 
-// An axios instance whose network layer is a scripted adapter.
 const instanceWith = (adapter) => attachColdStartHandling(axios.create({ adapter }));
 
 describe('isRetryable', () => {

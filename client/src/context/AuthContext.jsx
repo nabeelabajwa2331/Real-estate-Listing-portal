@@ -3,9 +3,6 @@ import api from '../api/axios.js';
 
 const AuthContext = createContext(null);
 
-// The last confirmed session is cached so a refresh paints the signed-in
-// header immediately instead of flashing "Sign in" while /auth/me is in
-// flight. The server remains the source of truth: a failed check clears it.
 const CACHE_KEY = 're.auth.user';
 
 const readCachedUser = () => {
@@ -35,7 +32,6 @@ export function AuthProvider({ children }) {
     writeCachedUser(next);
   };
 
-  // On page load, ask the server who is signed in (the cookie is sent automatically)
   useEffect(() => {
     api
       .get('/auth/me')
@@ -50,10 +46,6 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, []);
 
-  // An expired or revoked session on any protected endpoint signs the browser
-  // out locally instead of leaving the UI showing a logged-in shell whose
-  // requests all fail. Auth endpoints are excluded because a failed sign-in is
-  // not an expired session.
   useEffect(() => {
     const id = api.interceptors.response.use(
       (response) => response,
@@ -89,13 +81,11 @@ export function AuthProvider({ children }) {
     return data.user;
   };
 
-
   const logout = async () => {
     try {
       await api.post('/auth/logout');
     } catch {
-      // Even if the server is unreachable, drop the local session so another
-      // account can sign in without inheriting this user's data.
+      // Sign out locally even if the server is unreachable.
     } finally {
       applyUser(null);
     }
@@ -142,6 +132,5 @@ export function AuthProvider({ children }) {
 
 export const useAuth = () => useContext(AuthContext);
 
-// Where each role lands after signing in
 export const homeForRole = (role) =>
   ({ admin: '/admin', agent: '/agent', user: '/dashboard' })[role] || '/';

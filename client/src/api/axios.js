@@ -7,10 +7,8 @@ const api = axios.create({
   withCredentials: true, // send the login cookie with every request
 });
 
-// Shows a "waking up" notice and retries GETs while the free-tier API boots.
 attachColdStartHandling(api);
 
-// Turns any failed request into a readable message for forms to display
 export const errorMessage = (err) =>
   err?.response?.data?.message || 'Something went wrong. Please try again.';
 

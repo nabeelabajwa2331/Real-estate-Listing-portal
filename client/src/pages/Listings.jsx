@@ -9,8 +9,6 @@ import { loginPath, locationToPath } from '../utils/redirect.js';
 import { validateSearchFilters } from '../utils/search.js';
 import { useTitle } from '../utils/useTitle.js';
 
-// Leaflet is only needed once the results have rendered, so keep it out of the
-// initial bundle.
 const ListingMap = lazy(() => import('../components/ListingMap.jsx'));
 
 const emptyFilters = {
@@ -49,7 +47,6 @@ const sameBoundsValue = (a, b) => {
   return Boolean(sameBounds(a, b));
 };
 
-// Reads the initial state from the URL so a saved search can be replayed.
 function readInitialState(searchParams) {
   const filters = { ...emptyFilters };
   for (const key of FILTER_KEYS) filters[key] = searchParams.get(key) || '';
@@ -84,8 +81,6 @@ export default function Listings() {
   const [page, setPage] = useState(initial.page);
   const [bounds, setBounds] = useState(initial.bounds);
   const [autoSearch, setAutoSearch] = useState(true);
-  // Bounds are only sent to the API after the visitor has deliberately moved
-  // the map. The initial fitBounds() must not silently narrow the search.
   const [mapActive, setMapActive] = useState(Boolean(initial.bounds));
   const [showMore, setShowMore] = useState(
     Boolean(initial.filters.minArea || initial.filters.maxArea || initial.filters.bedrooms)
@@ -114,16 +109,12 @@ export default function Listings() {
     setMapActive(true);
   }, []);
 
-  // Params actually sent to the API (includes paging + viewport bounds once the
-  // map has been touched deliberately).
   const requestParams = useMemo(() => {
     const p = { ...filters, sort, page, limit: LIMIT };
     if (autoSearch && mapActive && bounds) Object.assign(p, bounds);
     return p;
   }, [filters, sort, page, bounds, autoSearch, mapActive]);
 
-  // Params stored in a saved search. The map area is opt-in through the save
-  // dialog so an automatically fitted viewport never becomes part of a search.
   const buildSavedParams = useCallback(
     (includeArea) => {
       const p = {};
@@ -157,9 +148,6 @@ export default function Listings() {
     };
   }, [requestParams]);
 
-  // Adopt filters from the URL when it changes from the outside (browser
-  // back/forward, a shared link, or a replayed saved search). Guarded so our own
-  // URL sync below does not cause a loop.
   useEffect(() => {
     const next = readInitialState(searchParams);
     setFilters((current) => (sameFilterValues(current, next.filters) ? current : next.filters));
@@ -167,15 +155,12 @@ export default function Listings() {
     setSort((current) => (current === next.sort ? current : next.sort));
     setPage((current) => (current === next.page ? current : next.page));
     setBounds((current) => (sameBoundsValue(current, next.bounds) ? current : next.bounds));
-    // A replayed saved search that includes an area is an intentional viewport,
-    // so its bounds may be sent back to the API.
     if (next.bounds) {
       mapActiveRef.current = true;
       setMapActive(true);
     }
   }, [searchParams]);
 
-  // Keep the URL in step with the current search so it is shareable.
   useEffect(() => {
     const next = new URLSearchParams();
     for (const key of FILTER_KEYS) if (filters[key]) next.set(key, filters[key]);
@@ -226,8 +211,6 @@ export default function Listings() {
     }
   };
 
-  // "Clear" means every listing again, so the map area is dropped as well and
-  // the map re-fits to the new results.
   const resetFilters = () => {
     clearTimeout(boundsTimer.current);
     shouldFit.current = true;
@@ -258,7 +241,6 @@ export default function Listings() {
     setError('');
     setNotice('');
     if (!user) {
-      // Guests keep browsing; saving is the one action that needs an account.
       navigate(loginPath(locationToPath(location)));
       return;
     }

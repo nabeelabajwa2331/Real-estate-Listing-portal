@@ -1,6 +1,3 @@
-// Proxies forward-geocoding to Nominatim. Keeping this on the server lets us
-// send a descriptive User-Agent (which Nominatim asks for) and apply a rate
-// limit, and it keeps the third-party call out of the browser.
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
 
 // GET /api/geocode?q=...

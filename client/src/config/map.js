@@ -1,6 +1,3 @@
-// Central map configuration. Provide a MapTiler key to switch from the default
-// OpenStreetMap raster tiles to MapTiler's styled basemaps; otherwise OSM is
-// used so the map works with no signup.
 const KEY = import.meta.env.VITE_MAPTILER_KEY;
 const STYLE = import.meta.env.VITE_MAP_STYLE || 'streets-v2';
 

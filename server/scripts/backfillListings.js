@@ -1,15 +1,3 @@
-// Reports approved listings that are missing the fields a public listing now
-// requires: a street address, a city, map coordinates and at least one photo.
-//
-// With --apply it will geocode missing coordinates from the stored address.
-// It never invents a coordinate or a photo. Incomplete listings are left in
-// place (and reported) unless you explicitly pass --demote, which moves them
-// back to the pending queue so they cannot be shown publicly until fixed.
-//
-// Usage:
-//   npm run backfill-listings
-//   npm run backfill-listings -- --apply
-//   npm run backfill-listings -- --apply --demote
 import 'dotenv/config';
 import mongoose from 'mongoose';
 import Listing from '../models/Listing.js';

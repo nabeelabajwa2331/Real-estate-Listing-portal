@@ -1,7 +1,6 @@
 import { initialsOf, colorFor, avatarUrl } from '../utils/avatar.js';
 import { assetUrl } from '../config/api.js';
 
-// Shows the profile photo when the user has one, otherwise coloured initials.
 export default function Avatar({ user, size = 40, className = '' }) {
   const name = user?.name || '';
   const photo = assetUrl(avatarUrl(user));

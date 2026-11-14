@@ -1,13 +1,5 @@
 import { useServerStatusStore } from '../store/serverStatusStore.js';
 
-// Cold-start handling for the free-tier API host.
-//
-// 1. Any request still pending after SLOW_MS is reported to the server-status
-//    store so the UI can show a "waking up the server" notice.
-// 2. Idempotent GET requests that fail with a gateway error while the host is
-//    booting (502/503/504, or no response at all) are retried with backoff
-//    instead of surfacing an error on the very first visit.
-
 export const SLOW_MS = 4000;
 export const RETRY_DELAYS = [2000, 5000, 10000];
 
@@ -56,7 +48,6 @@ export function attachColdStartHandling(instance, store = useServerStatusStore) 
 
       const attempt = config.__retryCount || 0;
       config.__retryCount = attempt + 1;
-      // Keep the banner up while we wait between attempts.
       store.getState().markSlow();
       try {
         await wait(RETRY_DELAYS[attempt]);
