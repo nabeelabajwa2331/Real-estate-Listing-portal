@@ -59,3 +59,6 @@ Thumbs.db
 # Editor files
 .vscode-test/
 .vercel
+
+# Private submission notes (kept locally, not published)
+SUBMISSION.md
