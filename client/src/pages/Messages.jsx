@@ -199,7 +199,7 @@ export default function Messages() {
       id: item.id,
       to: `/messages/chat/${item.id}`,
       title: item.user?.name || 'User',
-      subtitle: item.user?.role || 'Member',
+      subtitle: item.listing?.title ? `About ${item.listing.title}` : item.user?.role || 'Member',
       preview: item.lastMessage?.body || 'No messages yet',
       time: item.updatedAt,
       unread: item.unread || 0,
@@ -256,7 +256,9 @@ export default function Messages() {
         : activeInquiryOther?.name;
   const activeSubtitle =
     activeKind === 'chat'
-      ? activeChat?.user?.role || 'Member'
+      ? activeChat?.listing?.title
+        ? `About ${activeChat.listing.title}`
+        : activeChat?.user?.role || 'Member'
       : activeKind === 'new'
         ? draftListingTitle
           ? `About ${draftListingTitle}`
@@ -491,10 +493,15 @@ export default function Messages() {
                   </div>
 
                   {((activeKind === 'inquiry' && activeInquiry?.listing?._id) ||
+                    (activeKind === 'chat' && activeChat?.listing?._id) ||
                     (activeKind === 'new' && draftListing)) && (
                     <Link
                       to={`/listings/${
-                        activeKind === 'inquiry' ? activeInquiry.listing._id : draftListing
+                        activeKind === 'inquiry'
+                          ? activeInquiry.listing._id
+                          : activeKind === 'chat'
+                            ? activeChat.listing._id
+                            : draftListing
                       }`}
                       className="btn btn-sm msg-head-action"
                     >
@@ -510,12 +517,24 @@ export default function Messages() {
 
                   {activeMessages.map((msg, index) => {
                     const mine = String(msg.sender?._id) === user.id;
+                    // In a direct chat, mark where the conversation moved on to
+                    // a different listing.
+                    const topic = activeKind === 'chat' && msg.listing?._id ? msg.listing : null;
+                    const previousTopic = activeMessages[index - 1]?.listing?._id;
+                    const showTopic = topic && String(topic._id) !== String(previousTopic || '');
                     return (
-                      <div key={msg._id || index} className={mine ? 'msg-row mine' : 'msg-row'}>
-                        {!mine && <Avatar user={msg.sender} size={26} />}
-                        <div className={mine ? 'msg-bubble mine' : 'msg-bubble'}>
-                          <p>{msg.body}</p>
-                          <span className="msg-time">{formatTime(msg.createdAt)}</span>
+                      <div key={msg._id || index} className="msg-row-group">
+                        {showTopic && (
+                          <p className="msg-topic muted small">
+                            About <Link to={`/listings/${topic._id}`}>{topic.title || 'a listing'}</Link>
+                          </p>
+                        )}
+                        <div className={mine ? 'msg-row mine' : 'msg-row'}>
+                          {!mine && <Avatar user={msg.sender} size={26} />}
+                          <div className={mine ? 'msg-bubble mine' : 'msg-bubble'}>
+                            <p>{msg.body}</p>
+                            <span className="msg-time">{formatTime(msg.createdAt)}</span>
+                          </div>
                         </div>
                       </div>
                     );

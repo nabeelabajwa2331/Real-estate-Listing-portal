@@ -12,7 +12,6 @@ import {
   resendVerification,
   login,
   googleConfig,
-  googleDemoLogin,
   googleLogin,
   logout,
   forgotPassword,
@@ -81,13 +80,6 @@ router.post(
   login
 );
 router.get('/google/config', googleConfig);
-router.post(
-  '/google/demo',
-  authLimiter,
-  [body('role').optional().isIn(['user', 'agent']).withMessage('Role must be user or agent')],
-  validate,
-  googleDemoLogin
-);
 router.post(
   '/google',
   authLimiter,

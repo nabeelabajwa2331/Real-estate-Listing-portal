@@ -117,21 +117,29 @@ export const startConversation = async (req, res) => {
     conversation = await Conversation.create({
       participants: [req.user._id, other._id],
       ...(listing ? { listing: listing._id } : {}),
-      messages: [{ sender: req.user._id, body: firstMessage }],
+      messages: [
+        { sender: req.user._id, body: firstMessage, ...(listing ? { listing: listing._id } : {}) },
+      ],
       lastMessageAt: new Date(),
     });
-  } else if (firstMessage) {
-    const update = {
-      $push: { messages: { sender: req.user._id, body: firstMessage } },
-      $set: { lastMessageAt: new Date() },
-    };
-    // Attach the listing context the first time it is known.
-    if (listing && !conversation.listing) update.$set.listing = listing._id;
-    await Conversation.updateOne({ _id: conversation._id }, update);
-    conversation = await Conversation.findById(conversation._id);
-  } else if (listing && !conversation.listing) {
-    await Conversation.updateOne({ _id: conversation._id }, { $set: { listing: listing._id } });
-    conversation = await Conversation.findById(conversation._id);
+  } else {
+    // Opening the chat from a listing makes that listing the current topic,
+    // so a second property is never discussed under the first one's title.
+    const topic = listing?._id || conversation.listing;
+    const update = { $set: {} };
+    if (listing && String(conversation.listing) !== String(listing._id)) {
+      update.$set.listing = listing._id;
+    }
+    if (firstMessage) {
+      update.$push = {
+        messages: { sender: req.user._id, body: firstMessage, ...(topic ? { listing: topic } : {}) },
+      };
+      update.$set.lastMessageAt = new Date();
+    }
+    if (update.$push || Object.keys(update.$set).length) {
+      await Conversation.updateOne({ _id: conversation._id }, update);
+      conversation = await Conversation.findById(conversation._id);
+    }
   }
 
   await conversation.populate('participants', 'name role avatar');
@@ -153,6 +161,7 @@ export const getConversation = async (req, res) => {
   const conversation = await Conversation.findById(req.params.id)
     .populate('participants', 'name role avatar')
     .populate('messages.sender', 'name role avatar')
+    .populate('messages.listing', 'title')
     .populate('listing', 'title images address');
 
   if (!conversation) return res.status(404).json({ message: 'Conversation not found' });
@@ -212,7 +221,14 @@ export const sendMessage = async (req, res) => {
   await Conversation.updateOne(
     { _id: conversation._id },
     {
-      $push: { messages: { sender: uid, body: req.body.body } },
+      $push: {
+        messages: {
+          sender: uid,
+          body: req.body.body,
+          // Tag the message with the listing being discussed right now.
+          ...(conversation.listing ? { listing: conversation.listing } : {}),
+        },
+      },
       $set: { lastMessageAt: new Date() },
     }
   );
@@ -226,21 +242,32 @@ export const sendMessage = async (req, res) => {
 // GET /api/chat/unread-count
 export const getUnreadCount = async (req, res) => {
   const uid = req.user._id;
-  const conversations = await Conversation.find({ participants: uid }).select('messages');
 
-  let count = 0; // conversations with at least one unread message
-  let messages = 0;
-  for (const conversation of conversations) {
-    const unread = conversation.messages.filter(
-      (m) => m.sender.toString() !== uid.toString() && !m.readAt
-    ).length;
-    if (unread > 0) {
-      count += 1;
-      messages += unread;
-    }
-  }
+  // Counted inside MongoDB so the badge never loads every message of every
+  // conversation into the API process.
+  const [row] = await Conversation.aggregate([
+    { $match: { participants: uid } },
+    {
+      $project: {
+        unread: {
+          $size: {
+            $filter: {
+              input: '$messages',
+              as: 'm',
+              cond: {
+                $and: [{ $ne: ['$$m.sender', uid] }, { $not: [{ $ifNull: ['$$m.readAt', false] }] }],
+              },
+            },
+          },
+        },
+      },
+    },
+    { $match: { unread: { $gt: 0 } } },
+    { $group: { _id: null, count: { $sum: 1 }, messages: { $sum: '$unread' } } },
+  ]);
 
-  res.json({ count, messages });
+  // count: conversations with at least one unread message.
+  res.json({ count: row?.count || 0, messages: row?.messages || 0 });
 };
 
 // GET /api/chat/users?q=  (people you can start a chat with)

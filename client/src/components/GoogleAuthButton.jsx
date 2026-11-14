@@ -70,19 +70,16 @@ const GoogleIcon = () => (
 // Renders Google's official sign-in button. The client ID is fetched from the
 // server at runtime so enabling Google sign-in only requires GOOGLE_CLIENT_ID
 // on the API (VITE_GOOGLE_CLIENT_ID remains a fallback for static hosting).
-export default function GoogleAuthButton({ onCredential, onError, onDemo }) {
+export default function GoogleAuthButton({ onCredential, onError, divider }) {
   const hostRef = useRef(null);
   const credentialRef = useRef(onCredential);
   const errorRef = useRef(onError);
-  const demoRef = useRef(onDemo);
   const envClientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim();
   const [clientId, setClientId] = useState('');
-  const [demoAvailable, setDemoAvailable] = useState(false);
   const [loadingConfig, setLoadingConfig] = useState(true);
 
   credentialRef.current = onCredential;
   errorRef.current = onError;
-  demoRef.current = onDemo;
 
   useEffect(() => {
     let active = true;
@@ -97,7 +94,6 @@ export default function GoogleAuthButton({ onCredential, onError, onDemo }) {
         // Trust the API when it answers: if it has no client ID, rendering a
         // button here would only fail later at /auth/google.
         setClientId(String(data?.clientId || '').trim());
-        setDemoAvailable(Boolean(data?.demo));
       })
       .catch(() => {
         if (active) setClientId(envClientId);
@@ -199,8 +195,21 @@ export default function GoogleAuthButton({ onCredential, onError, onDemo }) {
     };
   }, [clientId, loadingConfig]);
 
+  // The "or continue with email" divider belongs to the Google option, so it is
+  // only drawn when there is something above it.
+  const withDivider = (content) => (
+    <>
+      {content}
+      {divider && (
+        <div className="auth-divider">
+          <span>{divider}</span>
+        </div>
+      )}
+    </>
+  );
+
   if (loadingConfig) {
-    return (
+    return withDivider(
       <button type="button" className="btn google-btn" disabled>
         <GoogleIcon />
         Checking Google…
@@ -208,38 +217,12 @@ export default function GoogleAuthButton({ onCredential, onError, onDemo }) {
     );
   }
 
-  // No real client ID, but the API offers the sample-account demo fallback.
-  if (!clientId && demoAvailable) {
-    return (
-      <div className="google-demo">
-        <button
-          type="button"
-          className="btn google-btn"
-          onClick={() =>
-            demoRef.current
-              ? demoRef.current()
-              : errorRef.current?.('Google demo sign-in is unavailable on this page.')
-          }
-        >
-          <GoogleIcon />
-          Continue with Google
-        </button>
-      </div>
-    );
-  }
-
+  // Google sign-in is not set up on this server: offer email only, rather than
+  // a button that can only fail.
   if (!clientId) {
-    return (
-      <button
-        type="button"
-        className="btn google-btn"
-        onClick={() => errorRef.current?.(CONFIG_MESSAGE)}
-      >
-        <GoogleIcon />
-        Continue with Google
-      </button>
-    );
+    if (import.meta.env.DEV) console.info(CONFIG_MESSAGE);
+    return null;
   }
 
-  return <div className="google-auth" ref={hostRef} aria-label="Continue with Google" />;
+  return withDivider(<div className="google-auth" ref={hostRef} aria-label="Continue with Google" />);
 }

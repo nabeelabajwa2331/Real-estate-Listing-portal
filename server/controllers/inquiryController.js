@@ -30,7 +30,11 @@ export const createInquiry = async (req, res) => {
   const { listingId, message, subject } = req.body;
 
   const listing = await Listing.findById(listingId).populate('agent', 'name email');
-  if (!listing) return res.status(404).json({ message: 'Listing not found' });
+  // Only published listings can be asked about; pending or rejected records
+  // are private to their agent.
+  if (!listing || listing.status !== 'approved') {
+    return res.status(404).json({ message: 'Listing not found' });
+  }
 
   if (listing.agent._id.toString() === req.user._id.toString()) {
     return res.status(400).json({ message: 'You cannot inquire about your own listing' });
@@ -43,6 +47,9 @@ export const createInquiry = async (req, res) => {
     user: req.user._id,
     agent: listing.agent._id,
   });
+  // Email only when the agent had nothing unread here; follow-ups to an
+  // unread thread are already waiting for them.
+  const shouldEmail = !inquiry || !inquiry.agentUnread;
 
   if (inquiry) {
     inquiry.messages.push({ sender: req.user._id, body: message });
@@ -67,7 +74,7 @@ export const createInquiry = async (req, res) => {
   // Real-time push to the agent.
   emitToUser(listing.agent._id, 'inquiry:message', { inquiryId: inquiry._id.toString() });
 
-  await notify(listing.agent, inquiry, listing.title, req.user.name, message);
+  if (shouldEmail) await notify(listing.agent, inquiry, listing.title, req.user.name, message);
 
   res.status(201).json({ inquiry, message: 'Inquiry sent' });
 };
@@ -169,11 +176,16 @@ export const replyToInquiry = async (req, res) => {
   // Real-time push to the other party.
   emitToUser(recipientId, 'inquiry:message', { inquiryId: inquiry._id.toString() });
 
-  const [recipient, listing] = await Promise.all([
-    User.findById(recipientId).select('name email'),
-    Listing.findById(inquiry.listing).select('title'),
-  ]);
-  await notify(recipient, inquiry, listing?.title || 'your listing', req.user.name, req.body.message);
+  // One email per batch: only when the recipient had read everything before
+  // this message, so a quick back-and-forth does not flood their inbox.
+  const recipientHadUnread = isAgent ? inquiry.userUnread > 0 : inquiry.agentUnread > 0;
+  if (!recipientHadUnread) {
+    const [recipient, listing] = await Promise.all([
+      User.findById(recipientId).select('name email'),
+      Listing.findById(inquiry.listing).select('title'),
+    ]);
+    await notify(recipient, inquiry, listing?.title || 'your listing', req.user.name, req.body.message);
+  }
 
   res.status(201).json({ message: 'Reply sent' });
 };

@@ -328,14 +328,15 @@ function AdminOverview({ counts }) {
   useEffect(() => {
     let active = true;
     api
-      .get('/admin/users')
+      // Only the totals are needed here, not the user list itself.
+      .get('/admin/users', { params: { limit: 1 } })
       .then(({ data }) => {
         if (!active) return;
-        const users = data.users || [];
+        const roles = data.roleCounts || {};
         setStats({
-          total: users.length,
-          agents: users.filter((u) => u.role === 'agent').length,
-          online: data.onlineCount ?? users.filter((u) => u.isOnline).length,
+          total: (roles.user || 0) + (roles.agent || 0) + (roles.admin || 0),
+          agents: roles.agent || 0,
+          online: data.onlineCount ?? 0,
         });
       })
       .catch((err) => active && setError(errorMessage(err)));
@@ -447,19 +448,30 @@ function ApprovalQueue({ onCountsChange }) {
   const [rejectingId, setRejectingId] = useState(null);
   const [reason, setReason] = useState('');
   const [busyId, setBusyId] = useState(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  const load = async (nextStatus = status) => {
-    setLoading(true);
+  // Loads the first page (or, with `more`, appends the next one).
+  const load = async (nextStatus = status, more = false) => {
+    const nextPage = more ? page + 1 : 1;
+    if (more) setLoadingMore(true);
+    else setLoading(true);
     setError('');
     try {
-      const { data } = await api.get('/admin/listings', { params: { status: nextStatus } });
-      setListings(data.listings);
+      const { data } = await api.get('/admin/listings', {
+        params: { status: nextStatus, page: nextPage },
+      });
+      setListings((current) => (more ? [...current, ...data.listings] : data.listings));
+      setPage(nextPage);
+      setHasMore(Boolean(data.hasMore));
       setCounts(data.counts);
       onCountsChange?.(data.counts);
     } catch (err) {
       setError(errorMessage(err));
     } finally {
-      setLoading(false);
+      if (more) setLoadingMore(false);
+      else setLoading(false);
     }
   };
 
@@ -618,6 +630,14 @@ function ApprovalQueue({ onCountsChange }) {
           ))}
         </div>
       )}
+
+      {!loading && hasMore && (
+        <div className="admin-load-more">
+          <button type="button" className="btn" onClick={() => load(status, true)} disabled={loadingMore}>
+            {loadingMore ? 'Loading...' : 'Load more listings'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -631,19 +651,50 @@ function UsersPanel({ fixedRole = '' }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const paramsRef = useRef({ q: '', role: fixedRole });
+  // How many rows are on screen, so the background refresh keeps them all.
+  const shownRef = useRef(0);
+
+  const PAGE_SIZE = 50;
 
   const load = async (params = paramsRef.current, silent = false) => {
     if (!silent) setLoading(true);
     setError('');
     try {
-      const { data } = await api.get('/admin/users', { params });
+      const limit = silent ? Math.min(200, Math.max(PAGE_SIZE, shownRef.current)) : PAGE_SIZE;
+      const { data } = await api.get('/admin/users', { params: { ...params, limit } });
       setUsers(data.users);
+      shownRef.current = data.users.length;
+      setHasMore(Boolean(data.hasMore));
       setOnlineCount(data.onlineCount ?? 0);
     } catch (err) {
       setError(errorMessage(err));
     } finally {
       if (!silent) setLoading(false);
+    }
+  };
+
+  const loadMore = async () => {
+    setLoadingMore(true);
+    setError('');
+    try {
+      const page = Math.floor(shownRef.current / PAGE_SIZE) + 1;
+      const { data } = await api.get('/admin/users', {
+        params: { ...paramsRef.current, limit: PAGE_SIZE, page },
+      });
+      setUsers((current) => {
+        const seen = new Set(current.map((u) => u.id));
+        const next = [...current, ...data.users.filter((u) => !seen.has(u.id))];
+        shownRef.current = next.length;
+        return next;
+      });
+      setHasMore(Boolean(data.hasMore));
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -784,6 +835,14 @@ function UsersPanel({ fixedRole = '' }) {
           </table>
         </div>
       )}
+
+      {!loading && hasMore && (
+        <div className="admin-load-more">
+          <button type="button" className="btn" onClick={loadMore} disabled={loadingMore}>
+            {loadingMore ? 'Loading...' : `Load more ${isAgents ? 'agents' : 'users'}`}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -804,7 +863,7 @@ function AdminMessages() {
 
   const loadInbox = async () => {
     const [agentsRes, conversationsRes] = await Promise.all([
-      api.get('/admin/users', { params: { role: 'agent' } }),
+      api.get('/admin/users', { params: { role: 'agent', limit: 200 } }),
       api.get('/chat/conversations'),
     ]);
     setAgents(agentsRes.data.users || []);

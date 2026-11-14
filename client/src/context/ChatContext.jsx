@@ -7,12 +7,13 @@ const ChatContext = createContext(null);
 
 export function ChatProvider({ children }) {
   const { user } = useAuth();
+  const userId = user?.id;
   const socket = useSocket();
   const [unread, setUnread] = useState(0);
   const [tick, setTick] = useState(0); // bumped on a real-time chat message
 
   const refresh = useCallback(async () => {
-    if (!user) {
+    if (!userId) {
       setUnread(0);
       return;
     }
@@ -22,7 +23,18 @@ export function ChatProvider({ children }) {
     } catch {
       // ignore
     }
-  }, [user]);
+  }, [userId]);
+
+  // Catch up on anything sent while the live connection was down.
+  useEffect(() => {
+    if (!socket) return undefined;
+    const onReconnect = () => {
+      setTick((value) => value + 1);
+      refresh();
+    };
+    socket.io.on('reconnect', onReconnect);
+    return () => socket.io.off('reconnect', onReconnect);
+  }, [socket, refresh]);
 
   useEffect(() => {
     if (!socket) return undefined;

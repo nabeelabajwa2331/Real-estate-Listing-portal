@@ -16,19 +16,30 @@ const adminUser = (u) => ({
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-export const getListingsForReview = async (req, res) => {
-  const { status } = req.query;
-  const filter = status && status !== 'all' ? { status } : {};
+// ?page=&limit= with sane bounds, so admin lists stay fast as data grows.
+const paging = (query, defaultLimit, maxLimit) => {
+  const limit = Math.min(maxLimit, Math.max(1, Number.parseInt(query.limit, 10) || defaultLimit));
+  const page = Math.max(1, Number.parseInt(query.page, 10) || 1);
+  return { limit, page, skip: (page - 1) * limit };
+};
 
-  const [listings, grouped] = await Promise.all([
-    Listing.find(filter).sort('-createdAt').populate('agent', 'name email phone'),
+const STATUSES = ['pending', 'approved', 'rejected'];
+
+export const getListingsForReview = async (req, res) => {
+  const status = String(req.query.status || '');
+  const filter = STATUSES.includes(status) ? { status } : {};
+  const { limit, page, skip } = paging(req.query, 30, 100);
+
+  const [listings, total, grouped] = await Promise.all([
+    Listing.find(filter).sort('-createdAt').skip(skip).limit(limit).populate('agent', 'name email phone'),
+    Listing.countDocuments(filter),
     Listing.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
   ]);
 
   const counts = { pending: 0, approved: 0, rejected: 0 };
   for (const row of grouped) counts[row._id] = row.count;
 
-  res.json({ listings, counts });
+  res.json({ listings, counts, page, total, hasMore: skip + listings.length < total });
 };
 
 export const approveListing = async (req, res) => {
@@ -67,19 +78,36 @@ export const rejectListing = async (req, res) => {
   res.json({ listing, message: 'Listing rejected' });
 };
 
+const ROLES = ['user', 'agent', 'admin'];
+
 export const getUsers = async (req, res) => {
-  const { role, q } = req.query;
+  const role = String(req.query.role || '');
+  const q = String(req.query.q || '').trim();
   const filter = {};
-  if (role) filter.role = role;
+  if (ROLES.includes(role)) filter.role = role;
   if (q) {
-    const rx = new RegExp(escapeRegex(q), 'i');
+    const rx = new RegExp(escapeRegex(q.slice(0, 80)), 'i');
     filter.$or = [{ name: rx }, { email: rx }];
   }
+  const { limit, page, skip } = paging(req.query, 50, 200);
 
-  const users = await User.find(filter).sort('-createdAt');
+  const [users, total, grouped] = await Promise.all([
+    User.find(filter).sort('-createdAt').skip(skip).limit(limit),
+    User.countDocuments(filter),
+    // Totals across every account, for the overview metrics.
+    User.aggregate([{ $group: { _id: '$role', count: { $sum: 1 } } }]),
+  ]);
+
+  const roleCounts = { user: 0, agent: 0, admin: 0 };
+  for (const row of grouped) roleCounts[row._id] = row.count;
+
   res.json({
     users: users.map((u) => ({ ...adminUser(u), isOnline: isUserOnline(u._id) })),
     onlineCount: getOnlineCount(),
+    page,
+    total,
+    hasMore: skip + users.length < total,
+    roleCounts,
   });
 };
 

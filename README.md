@@ -191,18 +191,21 @@ This creates:
 
 | Role  | Email               | Password                |
 | ----- | ------------------- | ----------------------- |
-| Admin | `admin@example.com` | *shared with reviewers* |
+| Admin | `admin@example.com` | `SEED_ADMIN_PASSWORD`, or random (printed once) |
 | Agent | `agent@example.com` | `Agent12345`            |
 | Buyer | `buyer@example.com` | `Buyer12345`            |
 
-> The admin password is intentionally **not** published in this repository; it is
-> shared privately with reviewers. Never run the seed script against a production
-> database (it resets these demo accounts).
+> The admin password is never stored in the repository. Set `SEED_ADMIN_PASSWORD`
+> to choose one; otherwise a random password is generated and printed when the
+> script runs. The seed refuses to run when `NODE_ENV=production` unless you pass
+> `--allow-production`, because it resets these accounts.
 
 …plus 8 approved listings across several cities. The script is idempotent: it
 resets these demo accounts and replaces the demo agent's listings on each run.
-Change the credentials in `server/scripts/seed.js` before using it anywhere
-public.
+
+**Google sign-in** needs `GOOGLE_CLIENT_ID` on the server (see
+[Google sign-in](#google-sign-in)); without it the "Continue with Google" button
+is hidden and only email sign-in is offered.
 
 ---
 

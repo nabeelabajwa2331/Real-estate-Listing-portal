@@ -4565,3 +4565,25 @@ main.container {
 .wake-banner-ok {
   background: var(--primary);
 }
+
+/* Groups a chat bubble with the optional "About <listing>" marker above it. */
+.msg-row-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.msg-topic {
+  align-self: center;
+  margin: 6px 0 0;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  text-align: center;
+}
+
+/* "Load more" under paginated admin lists. */
+.admin-load-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}

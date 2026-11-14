@@ -8,7 +8,7 @@ import { locationToPath, registerPath, safeNextPath } from '../utils/redirect.js
 import { useTitle } from '../utils/useTitle.js';
 
 export default function Login() {
-  const { user, login, loginWithGoogle, loginWithGoogleDemo } = useAuth();
+  const { user, login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -46,19 +46,6 @@ export default function Login() {
     }
   };
 
-  const onDemo = async () => {
-    setError('');
-    setNotice('');
-    setGoogleBusy(true);
-    try {
-      const signedIn = await loginWithGoogleDemo();
-      navigate(from || homeForRole(signedIn.role), { replace: true });
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setGoogleBusy(false);
-    }
-  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -106,10 +93,11 @@ export default function Login() {
         </div>
       }
     >
-      <GoogleAuthButton onCredential={onGoogle} onDemo={onDemo} onError={setError} />
-      <div className="auth-divider">
-        <span>or sign in with email</span>
-      </div>
+      <GoogleAuthButton
+        onCredential={onGoogle}
+        onError={setError}
+        divider="or sign in with email"
+      />
 
       <form className="form auth-form" onSubmit={onSubmit}>
         {error && <p className="alert alert-error">{error}</p>}

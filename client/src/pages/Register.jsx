@@ -16,7 +16,7 @@ import {
 const empty = { name: '', email: '', phone: '', password: '', confirm: '', role: 'user' };
 
 export default function Register() {
-  const { user, register, loginWithGoogle, loginWithGoogleDemo } = useAuth();
+  const { user, register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -58,18 +58,6 @@ export default function Register() {
     }
   };
 
-  const onDemo = async () => {
-    setError('');
-    setGoogleBusy(true);
-    try {
-      const signedIn = await loginWithGoogleDemo(form.role);
-      navigate(from || homeForRole(signedIn.role), { replace: true });
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setGoogleBusy(false);
-    }
-  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -126,10 +114,11 @@ export default function Register() {
         </>
       }
     >
-      <GoogleAuthButton onCredential={onGoogle} onDemo={onDemo} onError={setError} />
-      <div className="auth-divider">
-        <span>or sign up with email</span>
-      </div>
+      <GoogleAuthButton
+        onCredential={onGoogle}
+        onError={setError}
+        divider="or sign up with email"
+      />
 
       <form className="form auth-form" onSubmit={onSubmit}>
         {error && <p className="alert alert-error">{error}</p>}

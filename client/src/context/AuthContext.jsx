@@ -89,12 +89,6 @@ export function AuthProvider({ children }) {
     return data.user;
   };
 
-  // Demo fallback shown while no real Google client ID is configured.
-  const loginWithGoogleDemo = async (role) => {
-    const { data } = await api.post('/auth/google/demo', role ? { role } : {});
-    applyUser(data.user);
-    return data.user;
-  };
 
   const logout = async () => {
     try {
@@ -134,7 +128,6 @@ export function AuthProvider({ children }) {
         loading,
         login,
         loginWithGoogle,
-        loginWithGoogleDemo,
         register,
         logout,
         updateProfile,

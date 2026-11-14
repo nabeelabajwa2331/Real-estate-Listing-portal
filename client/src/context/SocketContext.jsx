@@ -9,10 +9,13 @@ const SocketContext = createContext(null);
 // client is hosted separately) so the auth cookie is sent with the handshake.
 export function SocketProvider({ children }) {
   const { user } = useAuth();
+  // Keyed on the account id, not the user object: saving a profile replaces
+  // the object and must not tear down and reopen the live connection.
+  const userId = user?.id;
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       setSocket(null);
       return undefined;
     }
@@ -37,7 +40,7 @@ export function SocketProvider({ children }) {
       connection?.close();
       setSocket(null);
     };
-  }, [user]);
+  }, [userId]);
 
   return <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>;
 }

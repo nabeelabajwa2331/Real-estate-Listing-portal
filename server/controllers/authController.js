@@ -5,7 +5,7 @@ import PendingUser from '../models/PendingUser.js';
 import sendEmail from '../utils/sendEmail.js';
 import { uploadImages, deleteImage } from '../utils/upload.js';
 import { normalizePakistaniPhone } from '../utils/phone.js';
-import { isDemoBuyer, DEMO_BUYER_EMAIL, DEMO_BUYER_GOOGLE_ID } from '../utils/demo.js';
+import { isDemoBuyer } from '../utils/demo.js';
 import {
   sendTokenCookie,
   clearTokenCookie,
@@ -120,6 +120,13 @@ export const verifyEmail = async (req, res) => {
         .json({ message: 'This verification link has expired. Request a new one.', code: 'VERIFY_EXPIRED' });
     }
 
+    // The same address may have been activated another way in the meantime
+    // (for example Google sign-in). The account exists, so the signup is done.
+    if (await User.exists({ email: pending.email })) {
+      await PendingUser.deleteOne({ _id: pending._id });
+      return res.json({ message: 'This email is already active. You can sign in now.' });
+    }
+
     const user = new User({
       name: pending.name,
       email: pending.email,
@@ -162,13 +169,20 @@ export const verifyEmail = async (req, res) => {
 export const resendVerification = async (req, res) => {
   const { email } = req.body;
 
+  // A delivery failure is logged rather than surfaced: the answer must be the
+  // same whether or not the address exists.
+  const send = (recipient, raw) =>
+    sendVerificationEmail(recipient, raw).catch((err) =>
+      console.error('Verification email failed:', err.message)
+    );
+
   const pending = await PendingUser.findOne({ email });
   if (pending) {
     const { raw, hashed } = createRandomToken();
     pending.verifyToken = hashed;
     pending.verifyTokenExpires = verifyExpiry();
     await pending.save();
-    await sendVerificationEmail(pending, raw);
+    await send(pending, raw);
   } else {
     const user = await User.findOne({ email });
     if (user && !user.isVerified) {
@@ -176,7 +190,7 @@ export const resendVerification = async (req, res) => {
       user.verifyToken = hashed;
       user.verifyTokenExpires = verifyExpiry();
       await user.save();
-      await sendVerificationEmail(user, raw);
+      await send(user, raw);
     }
   }
 
@@ -215,16 +229,6 @@ export const login = async (req, res) => {
   res.json({ user: publicUser(user) });
 };
 
-// Demo fallback for "Continue with Google". It exists only while no real
-// Google client ID is configured, and can be switched off explicitly with
-// GOOGLE_DEMO_LOGIN=false. It signs into fixed sample accounts — it is not
-// real Google authentication.
-const googleDemoEnabled = () => {
-  if (String(process.env.GOOGLE_CLIENT_ID || '').trim()) return false;
-  const flag = String(process.env.GOOGLE_DEMO_LOGIN ?? 'true').trim().toLowerCase();
-  return !['false', '0', 'off', 'no'].includes(flag);
-};
-
 // GET /api/auth/google/config
 // The browser needs the public OAuth client ID to render Google's button. It
 // is read at runtime so a deployment only has to set GOOGLE_CLIENT_ID on the
@@ -237,60 +241,7 @@ export const googleConfig = (req, res) => {
   res.json({
     clientId: clientId || null,
     enabled: Boolean(clientId),
-    demo: googleDemoEnabled(),
   });
-};
-
-// POST /api/auth/google/demo
-// Signs into a fixed sample account so the "Continue with Google" option can be
-// exercised without a Google Cloud project. It is deliberately buyer-only and
-// read-only: it can never create or sign into an agent account. Never available
-// once a real client ID is set, and can be disabled with GOOGLE_DEMO_LOGIN=false.
-export const googleDemoLogin = async (req, res) => {
-  if (!googleDemoEnabled()) {
-    return res.status(503).json({ message: 'Google demo sign-in is disabled' });
-  }
-
-  let user = await User.findOne({
-    $or: [{ googleId: DEMO_BUYER_GOOGLE_ID }, { email: DEMO_BUYER_EMAIL }],
-  });
-
-  if (!user) {
-    user = await User.create({
-      name: 'Demo Google Buyer',
-      email: DEMO_BUYER_EMAIL,
-      phone: '',
-      // Same approach as a real Google account: a random password nobody knows.
-      password: crypto.randomBytes(32).toString('hex'),
-      role: 'user',
-      isVerified: true,
-      googleId: DEMO_BUYER_GOOGLE_ID,
-    });
-  } else {
-    if (!user.isActive) {
-      return res.status(403).json({ message: 'This demo account has been deactivated' });
-    }
-
-    // Defensive: an older deployment may have created this address with the
-    // agent role. Force it back to the read-only buyer identity.
-    let changed = false;
-    if (user.role !== 'user') {
-      user.role = 'user';
-      changed = true;
-    }
-    if (!user.googleId) {
-      user.googleId = DEMO_BUYER_GOOGLE_ID;
-      changed = true;
-    }
-    if (!user.isVerified) {
-      user.isVerified = true;
-      changed = true;
-    }
-    if (changed) await user.save();
-  }
-
-  sendTokenCookie(res, user);
-  res.json({ user: publicUser(user), demo: true });
 };
 
 // POST /api/auth/google

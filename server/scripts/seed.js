@@ -5,7 +5,13 @@
 // map coordinates, then prints the login details.
 //
 // Run with: npm run seed   (from the server folder)
+//
+// Safety: it refuses to run when NODE_ENV=production unless --allow-production
+// is passed, because it resets the demo accounts and replaces the demo agent's
+// listings. The admin password is never hard-coded: set SEED_ADMIN_PASSWORD, or
+// a random one is generated and printed once.
 import 'dotenv/config';
+import crypto from 'crypto';
 import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Listing from '../models/Listing.js';
@@ -17,9 +23,21 @@ if (!MONGO_URI) {
   process.exit(1);
 }
 
+if (process.env.NODE_ENV === 'production' && !process.argv.includes('--allow-production')) {
+  console.error(
+    'Refusing to seed: NODE_ENV is production. Seeding resets the demo accounts and deletes the demo ' +
+      "agent's listings. Re-run with --allow-production only if you are sure."
+  );
+  process.exit(1);
+}
+
+const ADMIN_PASSWORD =
+  process.env.SEED_ADMIN_PASSWORD || `Adm-${crypto.randomBytes(9).toString('base64url')}`;
+
 // Passwords meet the 8-character minimum and are hashed by the User model.
+// The agent and buyer are public demo accounts; the admin is not.
 const ACCOUNTS = [
-  { name: 'Admin User', email: 'admin@example.com', phone: '03000000001', password: 'Admin12345', role: 'admin' },
+  { name: 'Admin User', email: 'admin@example.com', phone: '03000000001', password: ADMIN_PASSWORD, role: 'admin' },
   { name: 'Ayesha Khan', email: 'agent@example.com', phone: '03000000002', password: 'Agent12345', role: 'agent' },
   { name: 'Bilal Ahmed', email: 'buyer@example.com', phone: '03000000003', password: 'Buyer12345', role: 'user' },
 ];
@@ -178,7 +196,7 @@ async function seed() {
 
   console.log('\nSeed complete.\n');
   console.log(`Accounts (all pre-verified and active):`);
-  console.log(`  Admin   ${admin.email}   password: Admin12345`);
+  console.log(`  Admin   ${admin.email}   password: ${ADMIN_PASSWORD}   (keep this private)`);
   console.log(`  Agent   ${agent.email}   password: Agent12345`);
   console.log(`  Buyer   ${buyer.email}   password: Buyer12345`);
   console.log(`\nListings created: ${listings.length} (all approved, with map coordinates).`);

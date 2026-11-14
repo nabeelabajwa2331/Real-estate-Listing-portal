@@ -7,12 +7,13 @@ const InquiryContext = createContext(null);
 
 export function InquiryProvider({ children }) {
   const { user } = useAuth();
+  const userId = user?.id;
   const socket = useSocket();
   const [unread, setUnread] = useState(0);
   const [tick, setTick] = useState(0); // bumped on a real-time message
 
   const refresh = useCallback(async () => {
-    if (!user) {
+    if (!userId) {
       setUnread(0);
       return;
     }
@@ -22,7 +23,19 @@ export function InquiryProvider({ children }) {
     } catch {
       // ignore; the badge just stays as-is
     }
-  }, [user]);
+  }, [userId]);
+
+  // Messages that arrived while the connection was down were never pushed,
+  // so catch up once it is back.
+  useEffect(() => {
+    if (!socket) return undefined;
+    const onReconnect = () => {
+      setTick((value) => value + 1);
+      refresh();
+    };
+    socket.io.on('reconnect', onReconnect);
+    return () => socket.io.off('reconnect', onReconnect);
+  }, [socket, refresh]);
 
   useEffect(() => {
     if (!socket) return undefined;
