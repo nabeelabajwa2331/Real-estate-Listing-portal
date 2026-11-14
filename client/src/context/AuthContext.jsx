@@ -59,7 +59,10 @@ export function AuthProvider({ children }) {
       (response) => response,
       (err) => {
         const url = err?.config?.url || '';
-        if (err?.response?.status === 401 && !url.startsWith('/auth/')) {
+        const expired = err?.response?.status === 401 && !url.startsWith('/auth/');
+        // An admin deactivating the account mid-session ends it too.
+        const deactivated = err?.response?.data?.code === 'ACCOUNT_DEACTIVATED';
+        if (expired || deactivated) {
           setUser(null);
           writeCachedUser(null);
         }

@@ -15,7 +15,15 @@ export const protect = async (req, res, next) => {
 
   const user = await User.findById(payload.id);
   if (!user) return res.status(401).json({ message: 'Account not found' });
-  if (!user.isActive) return res.status(403).json({ message: 'This account has been deactivated' });
+  if (user.tokenPredatesPassword(payload.iat)) {
+    return res.status(401).json({ message: 'Your password was changed. Please sign in again' });
+  }
+  if (!user.isActive) {
+    // The code lets the browser sign the user out instead of retrying.
+    return res
+      .status(403)
+      .json({ message: 'This account has been deactivated', code: 'ACCOUNT_DEACTIVATED' });
+  }
 
   req.user = user;
   next();
@@ -31,7 +39,7 @@ export const optionalProtect = async (req, res, next) => {
   try {
     const payload = verifyToken(token);
     const user = await User.findById(payload.id);
-    if (user && user.isActive) req.user = user;
+    if (user && user.isActive && !user.tokenPredatesPassword(payload.iat)) req.user = user;
   } catch {
     // ignore invalid/expired tokens for optional auth
   }

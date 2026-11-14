@@ -123,16 +123,18 @@ export default function Overview() {
           </span>
         </Link>
 
-        <div className="card dash-metric">
+        <Link to="/profile" className="card dash-metric">
           <span className="dash-metric-icon">
             {icons.user}
             {user.isVerified && <span className="dash-metric-check">{icons.check}</span>}
           </span>
           <span className="dash-metric-copy">
-            <span className="dash-metric-value">{user.isVerified ? 'Verified' : 'Complete'}</span>
-            <span className="dash-metric-label">Account status</span>
+            <span className="dash-metric-value">{user.phone ? 'Complete' : 'Add phone'}</span>
+            <span className="dash-metric-label">
+              {user.isVerified ? 'Profile · email verified' : 'Profile'}
+            </span>
           </span>
-        </div>
+        </Link>
       </div>
 
       <div className="dash-content-grid">
@@ -228,8 +230,8 @@ export default function Overview() {
       <section className="card dash-panel">
         <div className="dash-section-head">
           <div>
-            <h2>Recommended for you</h2>
-            <p className="muted small">Fresh listings that match your interests.</p>
+            <h2>New on the market</h2>
+            <p className="muted small">The latest approved listings you haven&apos;t saved yet.</p>
           </div>
           <Link to="/listings" className="dash-panel-link">
             Browse all
@@ -239,9 +241,9 @@ export default function Overview() {
         {error ? (
           <p className="alert alert-error">{error}</p>
         ) : loading ? (
-          <p className="muted dash-loading">Loading recommendations...</p>
+          <p className="muted dash-loading">Loading new listings...</p>
         ) : suggestions.length === 0 ? (
-          <p className="muted small">No new recommendations right now — check back soon.</p>
+          <p className="muted small">No new listings right now. Check back soon.</p>
         ) : (
           <div className="dash-card-grid">
             {suggestions.map((listing) => (

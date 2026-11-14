@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { errorMessage } from '../api/axios.js';
-import { useAuth } from '../context/AuthContext.jsx';
+import { useAuth, homeForRole } from '../context/AuthContext.jsx';
 import Avatar from '../components/Avatar.jsx';
 import {
   formatNationalPhone,
@@ -119,7 +119,9 @@ export default function Profile() {
     e.preventDefault();
     setError('');
     setNotice('');
-    if (!isValidNationalPhone(form.phone)) {
+    // Phone is optional (Google accounts start without one), but must be valid
+    // when it is filled in.
+    if (form.phone.trim() && !isValidNationalPhone(form.phone)) {
       setError(PHONE_MESSAGE);
       return;
     }
@@ -130,7 +132,8 @@ export default function Profile() {
     setBusy(true);
     try {
       const { confirmPassword, ...payload } = form;
-      setNotice(await updateProfile({ ...payload, phone: normalizePakistaniPhone(form.phone) }));
+      const phone = form.phone.trim() ? normalizePakistaniPhone(form.phone) : '';
+      setNotice(await updateProfile({ ...payload, phone }));
       setForm((f) => ({ ...f, currentPassword: '', newPassword: '', confirmPassword: '' }));
     } catch (err) {
       setError(errorMessage(err));
@@ -146,7 +149,7 @@ export default function Profile() {
           <h1>My profile</h1>
           <p className="muted">Manage your photo, contact details and password.</p>
         </div>
-        <Link to="/dashboard" className="btn">
+        <Link to={homeForRole(user.role)} className="btn">
           Back to dashboard
         </Link>
       </header>
@@ -240,7 +243,6 @@ export default function Profile() {
                   name="phone"
                   value={form.phone}
                   onChange={onChange}
-                  required
                   inputMode="numeric"
                   maxLength={11}
                   placeholder="300 1234567"
@@ -253,7 +255,11 @@ export default function Profile() {
           <section className="card profile-card">
             <div className="profile-card-head">
               <h2>Password</h2>
-              <p className="muted small">Leave both fields empty to keep your current password.</p>
+              <p className="muted small">
+                Leave these fields empty to keep your current password. Changing it signs you out
+                on your other devices. Signed up with Google? Use &ldquo;Forgot password&rdquo; on
+                the sign-in page to set one.
+              </p>
             </div>
             <div className="profile-field-grid">
               <label>

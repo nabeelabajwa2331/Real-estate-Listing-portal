@@ -75,10 +75,10 @@ const normaliseImage = async (buffer, options = {}) => {
   }
 };
 
-const uploadToCloudinary = (buffer) =>
+const uploadToCloudinary = (buffer, folder = 'real-estate/listings') =>
   new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
-      { folder: 'real-estate/listings', resource_type: 'image', format: 'jpg' },
+      { folder, resource_type: 'image', format: 'jpg' },
       (err, result) => {
         if (err) return reject(err);
         resolve({ url: result.secure_url, publicId: result.public_id });
@@ -95,12 +95,14 @@ const saveLocally = async (buffer) => {
 };
 
 // Validates, re-encodes and stores every file. Returns [{ url, publicId }].
-// Passing an avatar option resizes to a square profile image.
+// Options: width/height/fit for the resize (e.g. a square avatar with
+// fit: 'cover'), quality, and the Cloudinary folder.
 export const uploadImages = async (files = [], options = {}) => {
+  const { folder, ...resize } = options;
   const prepared = await Promise.all(
     files.map(async (file) => {
-      const buffer = await normaliseImage(file.buffer, options);
-      return cloudinaryReady ? uploadToCloudinary(buffer) : saveLocally(buffer);
+      const buffer = await normaliseImage(file.buffer, resize);
+      return cloudinaryReady ? uploadToCloudinary(buffer, folder) : saveLocally(buffer);
     })
   );
   return prepared;

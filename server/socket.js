@@ -34,7 +34,9 @@ export function initSocket(server) {
 
       const payload = jwt.verify(token, process.env.JWT_SECRET);
       const user = await User.findById(payload.id);
-      if (!user || !user.isActive) return next(new Error('unauthorized'));
+      if (!user || !user.isActive || user.tokenPredatesPassword(payload.iat)) {
+        return next(new Error('unauthorized'));
+      }
 
       socket.userId = user._id.toString();
       next();

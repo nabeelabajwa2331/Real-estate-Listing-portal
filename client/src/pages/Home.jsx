@@ -136,8 +136,8 @@ export default function Home() {
 
           {!user && (
             <p className="home-search-note">
-              Already a member? <Link to="/login">Sign in</Link> to see your saved homes and
-              conversations.
+              Browsing listings needs a free account. <Link to="/register">Create one</Link> in a
+              few seconds, or <Link to="/login">sign in</Link>.
             </p>
           )}
         </div>
@@ -171,7 +171,7 @@ export default function Home() {
         </div>
         <div className="stat">
           <b>{format(stats?.agents ?? 0)}</b>
-          <span>Verified agents</span>
+          <span>Active agents</span>
         </div>
         <div className="stat">
           <b>{format(stats?.cities ?? 0)}</b>

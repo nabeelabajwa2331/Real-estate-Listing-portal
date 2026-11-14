@@ -64,7 +64,7 @@ export default function ListingDetail() {
   if (!user) {
     return (
       <article className="listing-detail">
-        <ImageGallery images={listing.images} title="Property" />
+        <ImageGallery key={listing._id} images={listing.images} title="Property" />
 
         <div className="card guest-lock">
           <span className="guest-lock-icon" aria-hidden="true">
@@ -93,6 +93,9 @@ export default function ListingDetail() {
 
   const agent = listing.agent;
   const isOwner = user && (user.role === 'admin' || agent?._id === user.id);
+  // Only the listing's agent can open the edit form (it lives in the agent
+  // workspace); admins moderate from the approval queue instead.
+  const canEdit = user?.role === 'agent' && agent?._id === user.id;
   const saved = Boolean(user && favorites?.isFavorite(listing._id));
   const demoBuyer = Boolean(user?.isDemoBuyer);
 
@@ -185,9 +188,14 @@ export default function ListingDetail() {
                 {saved ? 'Saved' : 'Save'}
               </button>
             )}
-            {isOwner && (
+            {canEdit && (
               <Link to={`/agent/${listing._id}/edit`} className="btn">
                 Edit listing
+              </Link>
+            )}
+            {user.role === 'admin' && (
+              <Link to="/admin/properties" className="btn">
+                Review in admin
               </Link>
             )}
           </div>
@@ -204,12 +212,12 @@ export default function ListingDetail() {
       )}
       {isOwner && listing.status === 'rejected' && (
         <p className="alert alert-error">
-          This listing was rejected{listing.rejectionReason ? `: ${listing.rejectionReason}` : ''}. Edit and save it to
-          send it back for review.
+          This listing was rejected{listing.rejectionReason ? `: ${listing.rejectionReason}` : ''}.
+          {canEdit ? ' Edit and save it to send it back for review.' : ''}
         </p>
       )}
 
-      <ImageGallery images={listing.images} title={listing.title} />
+      <ImageGallery key={listing._id} images={listing.images} title={listing.title} />
 
       <div className="detail-columns">
         <div className="detail-main">

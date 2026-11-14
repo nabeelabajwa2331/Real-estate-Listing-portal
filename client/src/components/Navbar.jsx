@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import Avatar from './Avatar.jsx';
-import { useAuth, homeForRole } from '../context/AuthContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 import { useFavorites } from '../context/FavoritesContext.jsx';
 import { useInquiries } from '../context/InquiryContext.jsx';
 import { useChat } from '../context/ChatContext.jsx';
@@ -181,16 +181,6 @@ export default function Navbar() {
                 <span className="app-nav-icon">{icons.message}</span>
                 Messages
                 {messagesUnread > 0 && <span className="app-nav-count">{messagesUnread}</span>}
-              </NavLink>
-            )}
-
-            {!loading && user?.role === 'agent' && (
-              <NavLink
-                to={homeForRole(user.role)}
-                className="app-nav-link"
-                onClick={() => setMenuOpen(false)}
-              >
-                Dashboard
               </NavLink>
             )}
           </div>

@@ -835,6 +835,15 @@ function AdminMessages() {
     setActiveAgentId(agent.id);
     try {
       const { data } = await api.post('/chat/conversations', { userId: agent.id });
+      if (!data.conversation?.id) {
+        // No thread yet: show an empty draft. The first message creates it.
+        setThread({
+          id: null,
+          user: data.conversation?.user || { id: agent.id, name: agent.name, role: 'agent' },
+          messages: [],
+        });
+        return;
+      }
       const { data: threadData } = await api.get(`/chat/conversations/${data.conversation.id}`);
       setThread(threadData.conversation);
       await loadInbox();
@@ -862,7 +871,7 @@ function AdminMessages() {
   };
 
   const refreshThread = async () => {
-    if (!thread) return;
+    if (!thread?.id) return;
     setThreadLoading(true);
     setError('');
     try {
@@ -882,8 +891,18 @@ function AdminMessages() {
     setSending(true);
     setError('');
     try {
-      await api.post(`/chat/conversations/${thread.id}/messages`, { body: draft });
-      const { data } = await api.get(`/chat/conversations/${thread.id}`);
+      let conversationId = thread.id;
+      if (conversationId) {
+        await api.post(`/chat/conversations/${conversationId}/messages`, { body: draft });
+      } else {
+        // First message to this agent creates the conversation.
+        const { data: created } = await api.post('/chat/conversations', {
+          userId: activeAgentId,
+          body: draft,
+        });
+        conversationId = created.conversation.id;
+      }
+      const { data } = await api.get(`/chat/conversations/${conversationId}`);
       setThread(data.conversation);
       setDraft('');
       await loadInbox();
@@ -977,7 +996,7 @@ function AdminMessages() {
                 type="button"
                 className="btn btn-sm admin-msg-refresh"
                 onClick={refreshThread}
-                disabled={threadLoading}
+                disabled={threadLoading || !thread.id}
               >
                 Refresh
               </button>

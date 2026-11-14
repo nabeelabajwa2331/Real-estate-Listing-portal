@@ -107,7 +107,13 @@ router.get('/me', protect, getMe);
 router.put(
   '/me',
   protect,
-  [name().optional(), phone().optional(), password('newPassword').optional({ values: 'falsy' })],
+  // Phone stays optional here: Google accounts have none, and they must still
+  // be able to update their name or photo.
+  [
+    name().optional(),
+    phone().optional({ values: 'falsy' }),
+    password('newPassword').optional({ values: 'falsy' }),
+  ],
   validate,
   updateMe
 );

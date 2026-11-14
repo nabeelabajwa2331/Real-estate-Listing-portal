@@ -134,7 +134,19 @@ export const getListings = async (req, res) => {
   const sort = SORTS[req.query.sort] || SORTS.newest;
 
   const filter = { status: 'approved' };
-  if (city) filter['address.city'] = new RegExp(`^${escapeRegex(city)}$`, 'i');
+  // The location box accepts a city or an area ("DHA", "DHA Lahore"). Every
+  // word must appear somewhere in the city, street or province.
+  const words = String(city || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 5);
+  if (words.length) {
+    filter.$and = words.map((word) => {
+      const rx = new RegExp(escapeRegex(word), 'i');
+      return { $or: [{ 'address.city': rx }, { 'address.street': rx }, { 'address.state': rx }] };
+    });
+  }
   if (listingType) filter.listingType = listingType;
   if (propertyType) filter.propertyType = propertyType;
 
@@ -199,13 +211,17 @@ export const getListing = async (req, res) => {
   // Count at most one view per viewer per listing per day. The unique index on
   // (listing, viewerKey) rejects a duplicate; the TTL index expires the row
   // after 24 hours. A raw IP address is never stored, only a salted hash.
-  const key = viewerKey({ userId: req.user?._id, ip: req.ip });
-  try {
-    await ListingView.create({ listing: listing._id, viewerKey: key });
-    await Listing.updateOne({ _id: listing._id }, { $inc: { views: 1 } });
-    listing.views += 1;
-  } catch (err) {
-    if (err?.code !== 11000) console.error('Could not record listing view:', err.message);
+  // The listing's own agent and admins reviewing it are not buyers, so their
+  // visits are not counted.
+  if (!isOwner) {
+    const key = viewerKey({ userId: req.user?._id, ip: req.ip });
+    try {
+      await ListingView.create({ listing: listing._id, viewerKey: key });
+      await Listing.updateOne({ _id: listing._id }, { $inc: { views: 1 } });
+      listing.views += 1;
+    } catch (err) {
+      if (err?.code !== 11000) console.error('Could not record listing view:', err.message);
+    }
   }
 
   // Visitors who are not signed in only get the photos. Price, address,

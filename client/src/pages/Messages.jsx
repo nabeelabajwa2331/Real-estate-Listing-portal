@@ -107,6 +107,29 @@ export default function Messages() {
     };
   }, [loadList, inquiryTick, chatTick]);
 
+  // "Chat with agent" lands here with ?to=. If the two people already have a
+  // thread, open it (so the history is visible) instead of an empty draft. The
+  // server attaches the listing as context; nothing is created without a body.
+  const [draftChecking, setDraftChecking] = useState(false);
+  useEffect(() => {
+    if (!draftTo || chatId || inquiryId || demoBuyer) return undefined;
+    let active = true;
+    setDraftChecking(true);
+    setThreadError('');
+    api
+      .post('/chat/conversations', { userId: draftTo, listingId: draftListing || undefined })
+      .then(({ data }) => {
+        if (active && data.conversation?.id) {
+          navigate(`/messages/chat/${data.conversation.id}`, { replace: true });
+        }
+      })
+      .catch((err) => active && setThreadError(errorMessage(err)))
+      .finally(() => active && setDraftChecking(false));
+    return () => {
+      active = false;
+    };
+  }, [draftTo, draftListing, chatId, inquiryId, demoBuyer, navigate]);
+
   // Open a direct chat (and mark it read).
   useEffect(() => {
     if (!chatId) {
@@ -114,6 +137,10 @@ export default function Messages() {
       return undefined;
     }
     let active = true;
+    // Drop the previous thread when switching, so its messages are never shown
+    // under the new conversation (a real-time refresh of the same thread keeps
+    // it on screen).
+    setActiveChat((current) => (current && String(current.id) === chatId ? current : null));
     setThreadLoading(true);
     setThreadError('');
     api
@@ -137,6 +164,7 @@ export default function Messages() {
       return undefined;
     }
     let active = true;
+    setActiveInquiry((current) => (current && String(current._id) === inquiryId ? current : null));
     setThreadLoading(true);
     setThreadError('');
     api
@@ -431,8 +459,12 @@ export default function Messages() {
           {threadError && <p className="alert alert-error msg-alert">{threadError}</p>}
 
           {activeKind ? (
-            threadLoading && !activeChat && !activeInquiry ? (
+            draftChecking ||
+            (activeKind === 'chat' && !activeChat) ||
+            (activeKind === 'inquiry' && !activeInquiry) ? (
+              threadError ? null : (
               <p className="muted center msg-loading">Loading conversation...</p>
+              )
             ) : (
               <>
                 <header className="msg-head">

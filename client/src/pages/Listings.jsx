@@ -226,13 +226,27 @@ export default function Listings() {
     }
   };
 
+  // "Clear" means every listing again, so the map area is dropped as well and
+  // the map re-fits to the new results.
   const resetFilters = () => {
+    clearTimeout(boundsTimer.current);
+    shouldFit.current = true;
+    mapActiveRef.current = false;
+    setMapActive(false);
+    setBounds(null);
+    setError('');
     setForm(emptyFilters);
     setFilters(emptyFilters);
     setSort('newest');
     setPage(1);
     setShowMore(false);
   };
+
+  // Until the first response arrives the total is unknown, not zero.
+  const firstLoad = loading && listings.length === 0 && meta.total === 0;
+  const resultLabel = firstLoad
+    ? 'Searching...'
+    : `${meta.total} ${meta.total === 1 ? 'result' : 'results'}`;
 
   const goToPage = (next) => {
     setPage(next);
@@ -280,15 +294,15 @@ export default function Listings() {
         <div>
           <h1>Find your next property</h1>
           <p className="muted small">
-            {meta.total} {meta.total === 1 ? 'listing' : 'listings'} match your search
+            Filter by location, budget and type, or search by moving the map.
           </p>
         </div>
       </header>
 
       <form className="filters card" onSubmit={onSubmit}>
         <label className="filter-field filter-city">
-          City
-          <input name="city" value={form.city} onChange={onChange} placeholder="Any city" />
+          Location
+          <input name="city" value={form.city} onChange={onChange} placeholder="City or area" />
         </label>
         <label className="filter-field filter-type">
           Listing type
@@ -352,8 +366,8 @@ export default function Listings() {
       </form>
 
       <div className="search-toolbar">
-        <span className="muted small">
-          {meta.total} {meta.total === 1 ? 'result' : 'results'}
+        <span className="muted small" aria-live="polite">
+          {resultLabel}
         </span>
         <div className="toolbar-actions">
           <button

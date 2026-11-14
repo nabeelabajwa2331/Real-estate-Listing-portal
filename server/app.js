@@ -20,8 +20,12 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
 // Behind a reverse proxy (PaaS, nginx, etc.), so rate limiting sees the
-// real client IP rather than the proxy's.
-app.set('trust proxy', 1);
+// real client IP rather than the proxy's. TRUST_PROXY is the number of proxy
+// hops in front of the app: 1 for Render alone, 2 when Vercel rewrites to
+// Render. Only raise it if every request really passes through that many
+// proxies, otherwise clients can spoof their IP through X-Forwarded-For.
+const trustProxy = Number.parseInt(process.env.TRUST_PROXY ?? '1', 10);
+app.set('trust proxy', Number.isFinite(trustProxy) && trustProxy >= 0 ? trustProxy : 1);
 
 app.use(
   helmet({

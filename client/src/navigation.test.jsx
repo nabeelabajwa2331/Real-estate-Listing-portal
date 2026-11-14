@@ -119,7 +119,8 @@ describe('Marketplace navbar dashboard destination', () => {
     const html = renderNavbar('agent');
 
     expect(linkFor(html, 'My listings')).toBe('/agent');
-    expect(linkFor(html, 'Dashboard')).toBe('/agent');
+    // One link to the agent workspace, not two.
+    expect(html.match(/href="\/agent"/g)).toHaveLength(1);
     expect(html).toContain('href="/dashboard/saved"');
     expect(html).toContain('href="/messages"');
     expect(html).not.toContain('href="/admin"');

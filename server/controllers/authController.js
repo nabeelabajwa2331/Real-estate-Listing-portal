@@ -464,6 +464,8 @@ export const updateMe = async (req, res) => {
   }
 
   await user.save();
+  // A password change signs out every other session; keep this one signed in.
+  if (newPassword) sendTokenCookie(res, user);
   res.json({ user: publicUser(user), message: 'Profile updated' });
 };
 
@@ -474,7 +476,12 @@ export const updateAvatar = async (req, res) => {
   const user = await User.findById(req.user._id);
   const previous = user.avatar?.publicId ? { publicId: user.avatar.publicId } : null;
 
-  const [uploaded] = await uploadImages([req.file]);
+  const [uploaded] = await uploadImages([req.file], {
+    width: 512,
+    height: 512,
+    fit: 'cover',
+    folder: 'real-estate/avatars',
+  });
   user.avatar = uploaded;
   await user.save();
 

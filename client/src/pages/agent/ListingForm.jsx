@@ -44,6 +44,7 @@ export default function ListingForm() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(editing);
+  const [status, setStatus] = useState(''); // current review status when editing
   const [geo, setGeo] = useState({ busy: false, error: '', label: '' });
 
   // Load the listing when editing.
@@ -76,6 +77,7 @@ export default function ListingForm() {
           lng: l.location?.coordinates?.[0] ?? '',
         });
         setExisting(l.images || []);
+        setStatus(l.status || '');
       })
       .catch((err) => active && setError(errorMessage(err)))
       .finally(() => active && setLoading(false));
@@ -177,6 +179,18 @@ export default function ListingForm() {
       </div>
 
       {error && <p className="alert alert-error">{error}</p>}
+
+      {editing && status === 'approved' && (
+        <p className="alert alert-info">
+          This listing is live. Saving any change sends it back for admin review, and it is
+          hidden from buyers until it is approved again.
+        </p>
+      )}
+      {editing && status === 'rejected' && (
+        <p className="alert alert-info">
+          Saving your changes sends this listing back to the admin for another review.
+        </p>
+      )}
 
       <section className="form-section">
         <h2>Basics</h2>
@@ -379,7 +393,13 @@ export default function ListingForm() {
 
       <div className="form-actions">
         <button className="btn btn-primary" disabled={busy}>
-          {busy ? 'Saving...' : editing ? 'Save changes' : 'Publish listing'}
+          {busy
+            ? 'Saving...'
+            : !editing
+              ? 'Submit for review'
+              : status === 'approved'
+                ? 'Save and resubmit'
+                : 'Save changes'}
         </button>
         <Link to="/agent" className="btn">
           Cancel
