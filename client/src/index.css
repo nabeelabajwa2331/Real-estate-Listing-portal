@@ -4538,3 +4538,30 @@ main.container {
   gap: 8px;
   font-weight: 500;
 }
+
+/* Shown while the free-tier API host wakes from sleep (see ServerWakeBanner). */
+.wake-banner {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100vw - 32px);
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--primary-dark);
+  color: #fff;
+  font-size: 0.9rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+.wake-banner .spinner {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+.wake-banner-ok {
+  background: var(--primary);
+}

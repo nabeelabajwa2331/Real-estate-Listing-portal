@@ -8,6 +8,11 @@ const apiTarget = process.env.VITE_PROXY_TARGET || 'http://localhost:5000';
 
 export default defineConfig({
   plugins: [react()],
+  test: {
+    // Component tests render into a real DOM via React Testing Library.
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.js'],
+  },
   build: {
     rollupOptions: {
       output: {

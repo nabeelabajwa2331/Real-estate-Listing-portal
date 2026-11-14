@@ -43,7 +43,9 @@ chat.
 
 **Tooling & infrastructure**
 
-- Vitest (client unit tests), Node's built-in `node:test` (server unit tests)
+- Zustand (global client state: saved items, saved searches, server status)
+- Vitest + React Testing Library + jsdom (client component and store tests),
+  Node's built-in `node:test` (server unit tests)
 - Docker (multi-stage build: client + API in one image)
 - GitHub Actions (CI: tests, client build, Docker build)
 - Vercel (front-end hosting) + Render (API hosting)
@@ -459,12 +461,51 @@ Both packages have a test script.
 
 ```bash
 cd server && npm test     # node:test — validation/query and token helpers
-cd client && npm test     # vitest — search and avatar helpers
+cd client && npm test     # vitest + React Testing Library (jsdom)
 ```
 
-The suites cover the pure logic that is easy to get wrong: regex escaping and
-saved-search param cleaning, JWT/token hashing, email address/domain checks, and
-the client's search summaries and avatar initials.
+The server suites cover the pure logic that is easy to get wrong: regex escaping
+and saved-search param cleaning, JWT/token hashing, email address/domain checks.
+
+The client suites cover:
+
+- **Components** (React Testing Library, rendered into jsdom): `ListingCard`
+  (details, price formatting, favorite toggle and error state), `ConfirmDialog`
+  (keyboard/backdrop dismissal, busy state, scroll lock), `Avatar`,
+  `ServerWakeBanner`, and the `ProtectedRoute` / `RoleRoute` guards.
+- **Stores** (Zustand): optimistic save/unsave with rollback, out-of-order
+  request handling, sign-out reset, saved-search create/delete.
+- **Cold-start handling:** slow-request detection and GET retry with backoff.
+- **Routing:** role-based navbar and dashboard routes (`navigation.test.jsx`).
+- **Helpers:** search summaries, avatar initials, favorites and redirect rules.
+
+## State management
+
+Server-backed lists that many screens share (saved properties, saved searches)
+live in [Zustand](https://github.com/pmndrs/zustand) stores under
+`client/src/store/`. Components subscribe to the slice they need, so toggling a
+favorite on one card does not re-render unrelated parts of the page. The
+`FavoritesProvider` / `SavedSearchesProvider` components now only sync the
+signed-in user into the stores, and `useFavorites()` / `useSavedSearches()`
+keep their original shape. Auth, socket, inquiry and chat state remain React
+context for now; they can move to stores the same way if the app grows.
+
+## Cold starts (Render free tier)
+
+The API runs on Render's free tier, which sleeps after ~15 minutes idle. Three
+things reduce the impact:
+
+1. **Keep-alive:** `.github/workflows/keep-alive.yml` pings `/api/health` every
+   10 minutes so the service rarely sleeps. Set the `API_HEALTH_URL` repository
+   variable to point it elsewhere. GitHub runs schedules on a best-effort basis,
+   so occasional cold starts can still happen.
+2. **User feedback:** any request pending for more than 4 s shows a "Waking up
+   the server" notice (`ServerWakeBanner`) instead of a silent spinner.
+3. **Retry:** idempotent GET requests that fail with 502/503/504 or no response
+   while the host boots are retried with backoff (2 s, 5 s, 10 s). Writes are
+   never retried.
+
+A paid Render plan (or any always-on host) removes cold starts entirely.
 
 ---
 
@@ -503,7 +544,8 @@ environment variables as Docker build arguments, so set `VITE_MAPTILER_KEY` /
 `GET /api/health`.
 
 > Free-tier services spin down when idle, so the first request after inactivity
-> is slow. A paid plan (or any always-on host) avoids the cold start.
+> is slow. See [Cold starts](#cold-starts-render-free-tier) for the keep-alive
+> workflow and client-side handling. A paid plan avoids the cold start.
 
 ### Option C — Vercel (front end) + Render (API) — current setup
 
@@ -567,7 +609,8 @@ With `NODE_ENV=production` the server serves `client/dist` and falls back to
 ### CI
 
 `.github/workflows/ci.yml` runs on push/PR: server tests, client tests + build,
-and a Docker image build.
+and a Docker image build. `.github/workflows/keep-alive.yml` pings the API's
+health endpoint every 10 minutes to limit free-tier cold starts.
 
 ### Separate frontend
 
@@ -584,6 +627,7 @@ Dockerfile                  Builds the client + runs the API in one image
 docker-compose.yml          Runs the app with env from a root .env
 render.yaml                 Render blueprint (one Docker web service)
 .github/workflows/ci.yml    CI: server tests, client tests + build, docker build
+.github/workflows/keep-alive.yml  Pings /api/health every 10 min (cold starts)
 server/
   config/db.js              MongoDB connection
   models/User.js            User schema, password hashing, favorites
@@ -609,8 +653,11 @@ client/
   .env.example              Map tile settings (MapTiler key, style) + API URL
   vercel.json               Rewrites /api, /uploads, /socket.io to the API host
   src/api/axios.js          Axios instance
+  src/api/coldStart.js      Slow-request detection + GET retry on cold start
   src/config/map.js         Tile URL, attribution and default view
-  src/context/              Auth, Socket, Favorites, Inquiry, Chat
+  src/store/                Zustand stores: favorites, saved searches, server status
+  src/context/              Auth, Socket, Inquiry, Chat (+ store sync providers)
+  src/test/setup.js         React Testing Library cleanup for Vitest
   src/utils/                search.js, avatar.js, phone.js
   src/routes/               ProtectedRoute, RoleRoute
   src/components/           Navbar, ListingCard, ImageGallery, ListingMap,

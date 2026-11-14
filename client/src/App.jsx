@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
+import ServerWakeBanner from './components/ServerWakeBanner.jsx';
 import ProtectedRoute from './routes/ProtectedRoute.jsx';
 import RoleRoute from './routes/RoleRoute.jsx';
 import Home from './pages/Home.jsx';
@@ -46,6 +47,7 @@ export default function App() {
 
   return (
     <>
+      <ServerWakeBanner />
       {!isWorkspace && <Navbar />}
       <main className={isWorkspace ? 'workspace-main' : 'container'}>
         <Routes>
