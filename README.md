@@ -6,8 +6,6 @@ design document — authentication, listings with admin approval, search + map,
 favorites and saved searches, inquiries with email notifications, and one-to-one
 chat.
 
-**Live app:** https://real-estate-listing-portal-hazel.vercel.app
-
 > The React front end is hosted on Vercel and proxies API calls to the Express
 > API on Render. Render's free tier spins down when idle, so the first request
 > after a period of inactivity may take 30–60 seconds while the API wakes up.
